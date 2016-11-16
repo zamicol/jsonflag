@@ -1,5 +1,5 @@
 # jsonflags
-See the [godoc](https://godoc.org/github.com/zamicol/jsonflags) for eveything you need to know.  
+See the [godoc](https://godoc.org/github.com/zamicol/jsonflags) for documentation. 
 
 jsonflags is a simple package to use JSON in conjunction with Go's flag package.
 
