@@ -44,8 +44,9 @@ func flags() {
 }
 
 // TestVerifyCorrectFlags
-// test with `go test --flag1=paramFlag1`
+// test with `go test --flag1=paramFlag1 --config=test_config.json`
 func TestVerifyCorrectFlags(t *testing.T) {
+
 	if tc.Flag1 != golden.Flag1 {
 		throwValuesMismatchError("Flag1", golden.Flag1, tc.Flag1, t)
 	}
