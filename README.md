@@ -7,7 +7,7 @@
 Use JSON configs in conjunction with Go's flag package.
 
 
-Example :
+Example:
 ```go
 type ExampleConfig struct {
 	Flag1 string
