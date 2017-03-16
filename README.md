@@ -7,8 +7,8 @@
 Use JSON configs in conjunction with Go's flag package.
 
 
-Example Go code:
-```
+Example :
+```go
 type ExampleConfig struct {
 	Flag1 string
 	Flag2 string
@@ -24,8 +24,8 @@ func main(){
 }
 ```
 
-Example json file:
-```
+Example `config.json` file:
+```json
 {
     "flag1": "jsonFlag1",
     "flag2": "jsonFlag2",
