@@ -1,10 +1,10 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/zamicol/jsonflags)](https://goreportcard.com/report/github.com/zamicol/jsonflags)
-
 # jsonflags
 
-See the [godoc](https://godoc.org/github.com/zamicol/jsonflags) for documentation. 
+[![Go Report Card](https://goreportcard.com/badge/github.com/zamicol/jsonflags)](https://goreportcard.com/report/github.com/zamicol/jsonflags)
+[![GoDoc](https://godoc.org/github.com/zamicol/jsonflags?status.svg)](https://godoc.org/github.com/zamicol/jsonflags)
 
-jsonflags is a simple package to use JSON in conjunction with Go's flag package.
+
+Use JSON configs in conjunction with Go's flag package.
 
 
 Example Go code:
