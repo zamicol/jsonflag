@@ -1,4 +1,4 @@
-package jsonflags
+package jsonflag
 
 import (
 	"flag"

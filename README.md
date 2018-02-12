@@ -1,10 +1,12 @@
-# jsonflags
+# jsonflag
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/zamicol/jsonflags)](https://goreportcard.com/report/github.com/zamicol/jsonflags)
-[![GoDoc](https://godoc.org/github.com/zamicol/jsonflags?status.svg)](https://godoc.org/github.com/zamicol/jsonflags)
+[![Go Report Card](https://goreportcard.com/badge/github.com/zamicol/jsonflag)](https://goreportcard.com/report/github.com/zamicol/jsonflag)
+[![GoDoc](https://godoc.org/github.com/zamicol/jsonflag?status.svg)](https://godoc.org/github.com/zamicol/jsonflag)
 
 
 Use JSON configs in conjunction with Go's flag package.
+
+[See the godocs for documentation.](https://godoc.org/github.com/zamicol/jsonflag)
 
 
 Example:
@@ -20,7 +22,7 @@ func main(){
   flag.StringVar(&config.Flag1, "flag1", "defaultFlag1", "flag1Desc")
   flag.StringVar(&config.Flag2, "flag2", "defaultFlag2", "flag2Desc")
   flag.IntVar(&config.Flag3, "flag3", 1, "flag3Desc")
-  jsonflags.Parse(&config)
+  jsonflag.Parse(&config)
 }
 ```
 
