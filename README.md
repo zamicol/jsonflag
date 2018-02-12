@@ -6,7 +6,7 @@
 
 Use JSON configs in conjunction with Go's flag package.
 
-[See the godocs for documentation.](https://godoc.org/github.com/zamicol/jsonflag)
+[See the godocs for documentation and a working example.](https://godoc.org/github.com/zamicol/jsonflag)
 
 
 Example:
@@ -22,6 +22,7 @@ func main(){
   flag.StringVar(&config.Flag1, "flag1", "defaultFlag1", "flag1Desc")
   flag.StringVar(&config.Flag2, "flag2", "defaultFlag2", "flag2Desc")
   flag.IntVar(&config.Flag3, "flag3", 1, "flag3Desc")
+
   jsonflag.Parse(&config)
 }
 ```

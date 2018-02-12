@@ -1,7 +1,7 @@
 {
     "flag1": "jsonFlag1",
-    "flag1": "jsonFlag2",
-    "flag3": "jsonFlag3",
-    "flag6": "jsonFlag6",
-    "flag7": 7
+    "flag2": "jsonFlag2",
+    "flag4": "jsonFlag4",
+    "flag5": 5,
+    "flag6": 6
 }
