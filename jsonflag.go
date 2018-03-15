@@ -9,19 +9,18 @@
 //
 // Order of precedence for set config values:
 //
-// 1. Command line flags. (cli Example: `--flag1=flag1Value`)
-// 2. JSON values (json Example: `{"flag2": "flag2Value"}`)
-// 3. Default flag values (go Example: `flag.StringVar(&config.Flag, "flagName", "flagDefaultValue", "description")`)
+//  1. Command line flags. (cli Example: `--flag1=flag1Value`)
+//  2. JSON values (json Example: `{"flag2": "flag2Value"}`)
+//  3. Default flag values (go Example: `flag.StringVar(&config.Flag, "flagName", "flagDefaultValue", "description")`)
 //
 //
 // This package uses Go's json package for decoding.  The json decoder only
 // has accesses to exported fields of structs follows it's own
 // precedence for json decoding, namely:
 //
-// 1. Tags
-// 2. Exact case
-// 3. Case insensitive
-//
+//  1. Tags
+//  2. Exact case
+//  3. Case insensitive
 //
 //
 // Recommended Usage
@@ -38,24 +37,28 @@
 //
 // You can set the config path via the cli,
 //
-//   --config=your_config.json
+//  --config=your_config.json
 //
-// You can also set it in your application.
+// You can also set it in your application.  Note that this can be overwritten by the normal precedence.
 //
-//    path := "assets/config.json"
-//    jsonflag.Path = &path
+//  path := "assets/config.json"
+//  jsonflag.Path = &path
 //
 //
 // Testing
 //
 // Since this package uses flag, test functions need a cli flag passed to verify
 // cli parsing is working.  Test will fail otherwise.
-//    go test --flag1=cliFlag1 --config=test_config.json
+//
+//  USER=exampleUser go test --flag1=cliFlag1 --config=test_config.json
+//
 //
 // TODO
-// - Support environmental variables (between defaults and json config in the
-// 	precedence hierarchy).
-// - support json5
+//
+// I hope to support in the future:
+//
+//   * Config set by environmental variables (between defaults and json config in the precedence hierarchy).
+//   * json5 which permits comments and trailing commas like Go.
 //
 package jsonflag
 
