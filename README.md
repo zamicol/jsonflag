@@ -9,7 +9,7 @@ Use JSON configs in conjunction with Go's flag package.
 [See the godocs for documentation and a working example.](https://godoc.org/github.com/zamicol/jsonflag)
 
 
-Example:
+## Example
 ```go
 type ExampleConfig struct {
 	Flag1 string
@@ -30,8 +30,14 @@ func main(){
 Example `config.json` file:
 ```json
 {
-    "flag1": "jsonFlag1",
-    "flag2": "jsonFlag2",
-    "flag3": 3,
+"flag1": "jsonFlag1",
+"flag2": "jsonFlag2",
+"flag3": 3,
 }
+```
+
+## Testing
+
+```sh
+USER=exampleUser go test --flag1=cliFlag1 --config=test_config.json
 ```

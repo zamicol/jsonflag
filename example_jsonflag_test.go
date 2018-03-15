@@ -16,21 +16,23 @@ type Config struct {
 	Flag4 string // json with flag default (no cli flag)
 	Flag5 int    // json only int
 	Flag6 int    // json with flag default (no cli flag) int
+	User  string // Test ENV completion.
 }
 
 // flags holds all flag definitions for CLI and application set.
-// Flag 2 and 5 are missing.  JSON values will still populate.
+// Flag 2 and 5 are missing to test jsons values which will still populate.
 func flags() {
 	flag.StringVar(&tc.Flag1, "flag1", "defaultFlag1", "flag1Desc")
 	flag.StringVar(&tc.Flag3, "flag3", "defaultFlag3", "flag3Desc")
 	flag.StringVar(&tc.Flag4, "flag4", "defaultFlag4", "flag4Desc")
 	flag.IntVar(&tc.Flag6, "flag6", 1, "flag6Desc") // Set default to something other than 6 for testing.
+	flag.StringVar(&tc.User, "user", "flagUser", "User")
 
 	Parse(&tc)
 }
 
-// ExampleConfig prints out values
+// Example prints out values
 func Example() {
 	fmt.Println(tc)
-	// Output: {cliFlag1 jsonFlag2 defaultFlag3 jsonFlag4 5 6}
+	// Output: {cliFlag1 jsonFlag2 defaultFlag3 jsonFlag4 5 6 exampleUser}
 }

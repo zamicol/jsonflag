@@ -26,16 +26,16 @@ var golden = Config{
 // test with `go test --flag1=paramFlag1 --config=test_config.json`
 func TestVerifyCorrectFlags(t *testing.T) {
 	if tc.Flag1 != golden.Flag1 {
-		throwValuesMismatchError("Flag1", golden.Flag1, tc.Flag1, t)
+		throwValueMismatchError("Flag1", golden.Flag1, tc.Flag1, t)
 	}
 	if tc.Flag2 != golden.Flag2 {
-		throwValuesMismatchError("Flag2", golden.Flag2, tc.Flag2, t)
+		throwValueMismatchError("Flag2", golden.Flag2, tc.Flag2, t)
 	}
 	if tc.Flag3 != golden.Flag3 {
-		throwValuesMismatchError("Flag3", golden.Flag3, tc.Flag3, t)
+		throwValueMismatchError("Flag3", golden.Flag3, tc.Flag3, t)
 	}
 	if tc.Flag4 != golden.Flag4 {
-		throwValuesMismatchError("Flag4", golden.Flag4, tc.Flag4, t)
+		throwValueMismatchError("Flag4", golden.Flag4, tc.Flag4, t)
 	}
 	if tc.Flag5 != golden.Flag5 {
 		t.Error("Expected", golden.Flag5, "Got", tc.Flag5)
@@ -45,6 +45,6 @@ func TestVerifyCorrectFlags(t *testing.T) {
 	}
 }
 
-func throwValuesMismatchError(what string, expected string, got string, t *testing.T) {
+func throwValueMismatchError(what string, expected string, got string, t *testing.T) {
 	t.Error(what+" set incorrectly. Expected", expected, "Got", got)
 }

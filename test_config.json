@@ -3,5 +3,6 @@
     "flag2": "jsonFlag2",
     "flag4": "jsonFlag4",
     "flag5": 5,
-    "flag6": 6
+    "flag6": 6,
+    "user":"$USER"
 }
