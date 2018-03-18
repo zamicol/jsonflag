@@ -77,12 +77,13 @@ var Path = flag.String("config", "config.json", "Path to json config file.")
 func Parse(c interface{}) {
 	// Call Parse() for the first time to get default config path if set.
 	flag.Parse()
-	// Parse json file into the config struct.
+
 	parseJSON(*Path, c)
 	// Call again to overwrite json values with flags.
 	flag.Parse()
 }
 
+// parseJSON parses json file configPath into the config struct c.
 func parseJSON(configPath string, c interface{}) {
 	if configPath == "" {
 		return
@@ -95,28 +96,42 @@ func parseJSON(configPath string, c interface{}) {
 
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(c)
-	expand(c)
 	if err != nil {
 		panic(err)
 	}
+	// Expand env variables in config struct.
+	v := reflect.ValueOf(c)
+	Expand(v)
 }
 
-// expand expands any environmental variables in config settings.
-func expand(c interface{}) {
-
-	// Get pointer for reflection
-	p := reflect.ValueOf(c)
-	v := p.Elem()
-
-	for i := 0; i < v.NumField(); i++ {
-		field := v.Field(i)
-
-		if field.Type() != reflect.TypeOf("") {
-			continue
+// Expand expands any environmental variables in config settings recursively.
+// For example, on a system where $USER is set to user, $USER will become 'user'
+// TODO write tests, specifically for reflect.Slice, Map.
+func Expand(v reflect.Value) {
+	switch v.Kind() {
+	case reflect.Ptr:
+		// Get pointer for reflection
+		vv := v.Elem()
+		// for nil pointers
+		if !vv.IsValid() {
+			return
 		}
-
-		str := field.Interface().(string)
+		Expand(vv)
+	case reflect.Struct:
+		for i := 0; i < v.NumField(); i++ {
+			Expand(v.Field(i))
+		}
+	case reflect.Slice:
+		for i := 0; i < v.Len(); i++ {
+			Expand(v.Index(i))
+		}
+	case reflect.Map:
+		for _, key := range v.MapKeys() {
+			Expand(v.MapIndex(key))
+		}
+	case reflect.String:
+		str := v.Interface().(string)
 		str = os.ExpandEnv(str)
-		field.SetString(str)
+		v.SetString(str) // Value must be exported.
 	}
 }
