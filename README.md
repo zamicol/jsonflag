@@ -36,3 +36,5 @@ Example `config.json` file:
 }
 ```
 
+Environmental variables and cli flags give further flexibility.  See the documentation for order of precedence.  
+`flag1=flag1EnvValue go run --flag2=flag2CliValue`

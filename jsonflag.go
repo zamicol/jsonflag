@@ -18,8 +18,8 @@
 // "$Flag8" is expanded.
 //
 // This package uses Go's json package for decoding.  The json decoder only
-// has accesses to exported fields of structs and follows it's own
-// precedence for json decoding, namely:
+// has accesses to exported fields of structs and follows its own
+// precedence for json decoding:
 //
 //  1. Tags
 //  2. Exact case
