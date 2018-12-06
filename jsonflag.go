@@ -57,9 +57,9 @@
 //  FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 --config=test_config.json
 //
 //
-// TODO
+// TODO wishlist
 //
-//   * json5 support which permits comments and trailing commas like Go.
+//  * json5 support which permits comments and trailing commas like Go.
 //
 package jsonflag
 
@@ -68,6 +68,8 @@ import (
 	"flag"
 	"os"
 	"reflect"
+
+	"github.com/DisposaBoy/JsonConfigReader"
 )
 
 // Path defines default path.
@@ -100,7 +102,10 @@ func parseJSON(configPath string, c interface{}) {
 	}
 	defer file.Close()
 
-	decoder := json.NewDecoder(file)
+	// wrap reader before passing it to the json decoder for comment stripping
+	r := JsonConfigReader.New(file)
+
+	decoder := json.NewDecoder(r)
 	err = decoder.Decode(c)
 	if err != nil {
 		panic(err)

@@ -4,5 +4,28 @@
     "flag4": "jsonFlag4",
     "flag5": 5,
     "flag6": 6,
-    "flag8":"$Flag8"
+		"flag8":"$Flag8", // Go is cool with trailing commas in JSON.  
+	// OMG!  Was that just a comment in a JSON config?
+	// HOLY POTATOES! There's a comment in a json config!  But how?
+	// How is the world not exploding?  How are we still alive?  
+	// Why isn't timespace rip asunder?  
+	// I think I remember something said by a wise programmer:
+	/* 
+	Douglas Crockford
+	Apr 30, 2012
+	Comments in JSON
+
+	I removed comments from JSON because I saw people were using them to hold 
+	parsing directives, a practice which would have destroyed interoperability.  
+	I know that the lack of comments makes some people sad, but it shouldn't. 
+
+	Suppose you are using JSON to keep configuration files, which you would like 
+	to annotate. Go ahead and insert all the comments you like. Then pipe it 
+	through JSMin before handing it to your JSON parser.
+	*/
+	//
+	// Hot diggity dawng!  Comments in JSON used in the use case mentioned by its 
+	// author.  
+	//
+	// Hot diggity indeed.  
 }
