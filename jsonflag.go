@@ -15,10 +15,10 @@
 //
 //
 // Environmental variables will be expanded.  See testing for an example where
-// "$USER" is expanded to "exampleUser".
+// "$Flag8" is expanded.
 //
 // This package uses Go's json package for decoding.  The json decoder only
-// has accesses to exported fields of structs follows it's own
+// has accesses to exported fields of structs and follows it's own
 // precedence for json decoding, namely:
 //
 //  1. Tags
@@ -31,7 +31,7 @@
 // See testing for an example.
 //
 //  1. Define a `config` struct with exported fields.
-//  2. Use flag's functions to set default config values such as `flag.StringVar(&config.Flag1, "flag1Name", "flag1DefaultValue", "flag1Description")`
+//  2. Use flag's functions to set default config values. `flag.StringVar(&config.Flag1, "flag1Name", "flag1DefaultValue", "flag1Description")`
 //  3. Put config values in a `config.json` file. The config file path defaults to the cwd.  You can use `--config=your_config.json` to point somewhere else.
 //  4. Call `jsonflag.Parse(&config)`
 //
@@ -80,7 +80,7 @@ func Parse(c interface{}) {
 	flag.Parse()
 
 	// Get Environmental variables.
-	flag.VisitAll(Env)
+	flag.VisitAll(env)
 
 	// Parse the JSON config.  Set values will overwrite values set from environmental settings.
 	parseJSON(*Path, c)
@@ -107,12 +107,12 @@ func parseJSON(configPath string, c interface{}) {
 	}
 	// Expand env variables in config struct.
 	v := reflect.ValueOf(c)
-	Expand(v)
+	expand(v)
 }
 
 // Expand expands any environmental variables in config settings recursively.
 // For example, on a system where $USER is set to user, $USER will become 'user'
-func Expand(v reflect.Value) {
+func expand(v reflect.Value) {
 
 	switch v.Kind() {
 	case reflect.Ptr:
@@ -122,18 +122,18 @@ func Expand(v reflect.Value) {
 		if !vv.IsValid() {
 			return
 		}
-		Expand(vv)
+		expand(vv)
 	case reflect.Struct:
 		for i := 0; i < v.NumField(); i++ {
-			Expand(v.Field(i))
+			expand(v.Field(i))
 		}
 	case reflect.Slice:
 		for i := 0; i < v.Len(); i++ {
-			Expand(v.Index(i))
+			expand(v.Index(i))
 		}
 	case reflect.Map:
 		for _, key := range v.MapKeys() {
-			Expand(v.MapIndex(key))
+			expand(v.MapIndex(key))
 		}
 	case reflect.String:
 		str := v.Interface().(string)
@@ -144,7 +144,7 @@ func Expand(v reflect.Value) {
 }
 
 // Env sets Environmental values on all flags based on flag name.
-func Env(f *flag.Flag) {
+func env(f *flag.Flag) {
 	v := os.Getenv(f.Name)
 	if v != "" {
 		flag.Set(f.Name, v)
