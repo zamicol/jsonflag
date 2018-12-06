@@ -1,18 +1,21 @@
-// Package jsonflag is a simple example of how to use JSON configs in
-// conjunction with Go's flag package, which allows for default values.
-//
-// Flag values do not need to appear in the config file
-// and extra config file values will be ignore.
-//
-// Environmental variables will be expanded.  See testing for an example where
-// "$USER" is expanded to "exampleUser".
+// Package jsonflag is for configuration settings.  It extends
+// Go's flag package, designed for cli flags, with json config files and environmental
+// variables.  It does not replace any part of flag.
 //
 // Order of precedence for set config values:
 //
 //  1. Command line flags. (cli Example: `--flag1=flag1Value`)
-//  2. JSON values (json Example: `{"flag2": "flag2Value"}`)
-//  3. Default flag values (go Example: `flag.StringVar(&config.Flag, "flagName", "flagDefaultValue", "description")`)
+//  2. JSON config values. (json Example: `{"flag2": "flag2Value"}`)
+//  3. Environmental Variables (Example: FLAG3=flag3value)
+//  4. Default values set on flag. (go Example: `flag.StringVar(&config.Flag4, "flag4Name", "flag4DefaultValue", "flag4Description")`)
 //
+// Flag values do not need to appear in the json config file and can be left blank if desired.
+// If not set in config struct or exported, extra json config file values will be ignored.
+// If a value should not be set by flags, add the value in the config struct and json config file.  It will still be set.
+//
+//
+// Environmental variables will be expanded.  See testing for an example where
+// "$USER" is expanded to "exampleUser".
 //
 // This package uses Go's json package for decoding.  The json decoder only
 // has accesses to exported fields of structs follows it's own
@@ -25,9 +28,11 @@
 //
 // Recommended Usage
 //
+// See testing for an example.
+//
 //  1. Define a `config` struct with exported fields.
-//  2. Use flag's functions to set default config values such as `flag.StringVar(&config.Flag1, "flag1", "defaultFlag1value", "flag1Desc")`
-//  3. Put config values in a `config.json` file in the CWD. You can use --config=your_config.json to point somewhere else.
+//  2. Use flag's functions to set default config values such as `flag.StringVar(&config.Flag1, "flag1Name", "flag1DefaultValue", "flag1Description")`
+//  3. Put config values in a `config.json` file. The config file path defaults to the cwd.  You can use `--config=your_config.json` to point somewhere else.
 //  4. Call `jsonflag.Parse(&config)`
 //
 // The config struct is now appropriately populated.
@@ -39,10 +44,9 @@
 //
 //  --config=your_config.json
 //
-// You can also set it in your application.  Note that this can be overwritten by the normal precedence.
+// You can also set it in your application.  Note that this can be overwritten by the normal precedence via a cli flag as previously mentioned.
 //
-//  path := "assets/config.json"
-//  jsonflag.Path = &path
+//  jsonflag.Path = "assets/config.json"
 //
 //
 // Testing
@@ -50,15 +54,12 @@
 // Since this package uses flag, test functions need a cli flag passed to verify
 // cli parsing is working.  Test will fail otherwise.
 //
-//  USER=exampleUser go test --flag1=cliFlag1 --config=test_config.json
+//  FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 --config=test_config.json
 //
 //
 // TODO
 //
-// I hope to support in the future:
-//
-//   * Config set by environmental variables (between defaults and json config in the precedence hierarchy).
-//   * json5 which permits comments and trailing commas like Go.
+//   * json5 support which permits comments and trailing commas like Go.
 //
 package jsonflag
 
@@ -78,7 +79,12 @@ func Parse(c interface{}) {
 	// Call Parse() for the first time to get default config path if set.
 	flag.Parse()
 
+	// Get Environmental variables.
+	flag.VisitAll(Env)
+
+	// Parse the JSON config.  Set values will overwrite values set from environmental settings.
 	parseJSON(*Path, c)
+
 	// Call again to overwrite json values with flags.
 	flag.Parse()
 }
@@ -106,8 +112,8 @@ func parseJSON(configPath string, c interface{}) {
 
 // Expand expands any environmental variables in config settings recursively.
 // For example, on a system where $USER is set to user, $USER will become 'user'
-// TODO write tests, specifically for reflect.Slice, Map.
 func Expand(v reflect.Value) {
+
 	switch v.Kind() {
 	case reflect.Ptr:
 		// Get pointer for reflection
@@ -131,7 +137,16 @@ func Expand(v reflect.Value) {
 		}
 	case reflect.String:
 		str := v.Interface().(string)
+		// Expand possible environmental variable in config value.
 		str = os.ExpandEnv(str)
 		v.SetString(str) // Value must be exported.
+	}
+}
+
+// Env sets Environmental values on all flags based on flag name.
+func Env(f *flag.Flag) {
+	v := os.Getenv(f.Name)
+	if v != "" {
+		flag.Set(f.Name, v)
 	}
 }
