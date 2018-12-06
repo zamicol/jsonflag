@@ -4,7 +4,7 @@
 [![GoDoc](https://godoc.org/github.com/zamicol/jsonflag?status.svg)](https://godoc.org/github.com/zamicol/jsonflag)
 
 
-Use JSON configs in conjunction with Go's flag package.
+Use JSON configs and environmental variables in conjunction with Go's flag package.
 
 [See the godocs for documentation and a working example.](https://godoc.org/github.com/zamicol/jsonflag)
 
@@ -36,8 +36,3 @@ Example `config.json` file:
 }
 ```
 
-## Testing
-
-```sh
-USER=exampleUser go test --flag1=cliFlag1 --config=test_config.json
-```
