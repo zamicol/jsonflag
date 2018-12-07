@@ -5,17 +5,21 @@
 // Order of precedence for set config values:
 //
 //  1. Command line flags. (cli Example: `--flag1=flag1Value`)
-//  2. JSON config values. (json Example: `{"flag2": "flag2Value"}`)
-//  3. Environmental Variables (Example: FLAG3=flag3value)
+//  2. Environmental Variables (Example: FLAG3=flag3value)
+//  3. JSON config values. (json Example: `{"flag2": "flag2Value"}`)
 //  4. Default values set on flag. (go Example: `flag.StringVar(&config.Flag4, "flag4Name", "flag4DefaultValue", "flag4Description")`)
 //
-// Flag values do not need to appear in the json config file and can be left blank if desired.
-// If not set in config struct or exported, extra json config file values will be ignored.
-// If a value should not be set by flags, add the value in the config struct and json config file.  It will still be set.
+// Flag values do not need to appear in the json config file and can be left
+// blank if desired. If not set in config struct or exported, extra json config
+// file values will be ignored. If a value should not be set by flags, add the
+// value in the config struct and json config file.  It will still be set.
 //
+// Environmental variables can be set using the flag name.  The flag's name will
+// be converted to all upper case.  If set, "EnvPrefix" will be prefixed when
+// looking up environment variables.
 //
-// Environmental variables will be expanded.  See testing for an example where
-// "$Flag8" is expanded.
+// Environmental variables in json config will be expanded.  See testing for an
+// example where "$Flag8" is expanded.
 //
 // This package uses Go's json package for decoding.  The json decoder only
 // has accesses to exported fields of structs and follows its own
@@ -44,7 +48,8 @@
 //
 //  --config=your_config.json
 //
-// You can also set it in your application.  Note that this can be overwritten by the normal precedence via a cli flag as previously mentioned.
+// You can also set it in your application.  Note that this can be overwritten
+// by the normal precedence via a cli flag as previously mentioned.
 //
 //  jsonflag.Path = "assets/config.json"
 //
@@ -68,6 +73,7 @@ import (
 	"flag"
 	"os"
 	"reflect"
+	"strings"
 
 	"github.com/DisposaBoy/JsonConfigReader"
 )
@@ -76,16 +82,20 @@ import (
 // This will be relative to pwd.
 var Path = flag.String("config", "config.json", "Path to json config file.")
 
+// EnvPrefix will be prepended to flag names if set.
+// Example, flag with the name "flag1" and a prefic of "MYAPP_" will become "MYAPP_FLAG1"
+var EnvPrefix = ""
+
 // Parse reads config file and parses cli flags into c by calling flag.Parse()
 func Parse(c interface{}) {
 	// Call Parse() for the first time to get default config path if set.
 	flag.Parse()
 
-	// Get Environmental variables.
-	flag.VisitAll(env)
-
 	// Parse the JSON config.  Set values will overwrite values set from environmental settings.
 	parseJSON(*Path, c)
+
+	// Get Environmental variables.
+	flag.VisitAll(env)
 
 	// Call again to overwrite json values with flags.
 	flag.Parse()
@@ -150,7 +160,7 @@ func expand(v reflect.Value) {
 
 // Env sets Environmental values on all flags based on flag name.
 func env(f *flag.Flag) {
-	v := os.Getenv(f.Name)
+	v := os.Getenv(EnvPrefix + strings.ToUpper(f.Name))
 	if v != "" {
 		flag.Set(f.Name, v)
 	}

@@ -3,13 +3,13 @@
     "flag2": "jsonFlag2",
     "flag4": "jsonFlag4",
     "flag5": 5,
-    "flag6": 6,
-		"flag8":"$Flag8", // Go is cool with trailing commas in JSON.  
+		"flag6": 6,
+		"flag7": "jsonFlag7",
+		"flag8":"$Flag8", // This package is cool with trailing commas in JSON.  
 	// OMG!  Was that just a comment in a JSON config?
 	// HOLY POTATOES! There's a comment in a json config!  But how?
-	// How is the world not exploding?  How are we still alive?  
-	// Why isn't timespace rip asunder?  
-	// I think I remember something said by a wise programmer:
+	// How is the world not exploding?  Why isn't timespace rip asunder?  
+	// Remember something long ago said by a wise programmer:
 	/* 
 	Douglas Crockford
 	Apr 30, 2012
