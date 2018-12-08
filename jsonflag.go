@@ -1,12 +1,12 @@
-// Package jsonflag is for configuration settings.  It extends
-// Go's flag package, designed for cli flags, with json config files and environmental
+// Package jsonflag is for configuration settings.  It extends Go's flag
+// package, designed for cli flags, with json config files and environmental
 // variables.  It does not replace any part of flag.
 //
 // Order of precedence for set config values:
 //
 //  1. Command line flags. (cli Example: `--flag1=flag1Value`)
-//  2. Environmental Variables (Example: FLAG3=flag3value)
-//  3. JSON config values. (json Example: `{"flag2": "flag2Value"}`)
+//  2. Environmental Variables (env Example: FLAG2=flag2value)
+//  3. JSON config values. (json Example: `{"flag3": "flag3Value"}`)
 //  4. Default values set on flag. (go Example: `flag.StringVar(&config.Flag4, "flag4Name", "flag4DefaultValue", "flag4Description")`)
 //
 // Flag values do not need to appear in the json config file and can be left
@@ -83,7 +83,7 @@ import (
 var Path = flag.String("config", "config.json", "Path to json config file.")
 
 // EnvPrefix will be prepended to flag names if set.
-// Example, flag with the name "flag1" and a prefic of "MYAPP_" will become "MYAPP_FLAG1"
+// Example, flag with the name "flag1" and a prefix of "MYAPP_" will become "MYAPP_FLAG1"
 var EnvPrefix = ""
 
 // Parse reads config file and parses cli flags into c by calling flag.Parse()
