@@ -44,3 +44,8 @@ func main(){
 Environmental variables and cli flags give further flexibility.  See the documentation for order of precedence.  
 
 	`FLAG1=flag1EnvValue go run --flag2=flag2CliValue`
+
+
+
+	# TODO
+Add support for go tags, possibly for json and description

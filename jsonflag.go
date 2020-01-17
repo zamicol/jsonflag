@@ -108,7 +108,8 @@ func parseJSON(configPath string, c interface{}) {
 	}
 	file, err := os.Open(configPath)
 	if err != nil {
-		panic(err)
+		// Assume there is no config file
+		return
 	}
 	defer file.Close()
 
