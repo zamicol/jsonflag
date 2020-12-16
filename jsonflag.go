@@ -59,13 +59,10 @@
 // Since this package uses flag, test functions need a cli flag passed to verify
 // cli parsing is working.  Test will fail otherwise.
 //
-//  FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 --config=test_config.json
+//  FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 --config=test_config.json5
 //
 //
-// TODO wishlist
-//
-//  * json5 support which permits comments and trailing commas like Go.
-//
+
 package jsonflag
 
 import (
@@ -80,7 +77,7 @@ import (
 
 // Path defines default path.
 // This will be relative to pwd.
-var Path = flag.String("config", "config.json", "Path to json config file.")
+var Path = flag.String("config", "config.json5", "Path to json config file.")
 
 // EnvPrefix will be prepended to flag names if set.
 // Example, flag with the name "flag1" and a prefix of "MYAPP_" will become "MYAPP_FLAG1"
@@ -120,6 +117,7 @@ func parseJSON(configPath string, c interface{}) {
 	if err != nil {
 		panic(err)
 	}
+
 	// Expand env variables in config struct.
 	v := reflect.ValueOf(c)
 	expand(v)

@@ -4,18 +4,18 @@
 [![GoDoc](https://godoc.org/github.com/zamicol/jsonflag?status.svg)](https://godoc.org/github.com/zamicol/jsonflag)
 
 
-Use JSON configs and environmental variables in conjunction with Go's flag package.
+Use JSON (json5) configs and environmental variables in conjunction with Go's flag package.
 
 [See the godocs for documentation and a working example.](https://godoc.org/github.com/zamicol/jsonflag)
 
 
 ## Example
-Example `config.json` file:
-```json
+Example `config.json5` file:
+```json5
 {
 "flag1": "jsonFlag1",
 "flag2": "jsonFlag2",
-"flag3": 3,  // Trailing commas and comments in json config are recommended.  
+"flag3": 3,  // Comments and trailing commas in json config are recommended.  
 }
 ```
 

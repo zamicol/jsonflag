@@ -16,18 +16,19 @@ func TestMain(m *testing.M) {
 
 // Golden test values.
 var golden = Config{
-	Flag1: "cliFlag1",
-	Flag2: "jsonFlag2",
-	Flag3: "defaultFlag3",
-	Flag4: "jsonFlag4",
-	Flag5: 5,
-	Flag6: 6,
-	Flag7: "FLAG7VALUE",
-	Flag8: "Flag8Env",
+	Flag1:   "cliFlag1",
+	Flag2:   "jsonFlag2",
+	Flag3:   "defaultFlag3",
+	Flag4:   "jsonFlag4",
+	Flag5:   5,
+	Flag6:   6,
+	Flag7:   "FLAG7VALUE",
+	Flag7x1: "FLAG7VALUE",
+	Flag8:   "Flag8Env",
 }
 
 // TestVerifyCorrectFlags
-// test with `FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 --config=test_config.json`
+// test with `FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 --config=test_config.json5`
 func TestVerifyCorrectFlags(t *testing.T) {
 	if tc.Flag1 != golden.Flag1 {
 		mismatchError("Flag1", golden.Flag1, tc.Flag1, t)
@@ -50,9 +51,13 @@ func TestVerifyCorrectFlags(t *testing.T) {
 	if tc.Flag7 != golden.Flag7 {
 		mismatchError("Flag7", golden.Flag7, tc.Flag7, t)
 	}
+	if tc.Flag7x1 != golden.Flag7x1 {
+		mismatchError("Flag7x1", golden.Flag7x1, tc.Flag7x1, t)
+	}
 	if tc.Flag8 != golden.Flag8 {
 		mismatchError("Flag8", golden.Flag8, tc.Flag8, t)
 	}
+
 }
 
 func mismatchError(what string, expected string, got string, t *testing.T) {

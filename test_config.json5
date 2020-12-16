@@ -7,9 +7,8 @@
 		"flag7": "jsonFlag7",
 		"flag8":"$Flag8", // This package is cool with trailing commas in JSON.  
 	// OMG!  Was that just a comment in a JSON config?
-	// HOLY POTATOES! There's a comment in a json config!  But how?
 	// How is the world not exploding?  Why isn't timespace rip asunder?  
-	// Remember something long ago said by a wise programmer:
+	// Remember saammer:
 	/* 
 	Douglas Crockford
 	Apr 30, 2012

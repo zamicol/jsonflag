@@ -10,14 +10,15 @@ var tc Config
 
 // Config's values must be exported
 type Config struct {
-	Flag1 string // Set by flag default, json, and CLI - CLI precedence
-	Flag2 string // Set by json only - json precedence
-	Flag3 string // Set by flag default only - default precedence
-	Flag4 string // Set by json and flag default - json precedence
-	Flag5 int    // json only int - json precedence
-	Flag6 int    // json with flag default int - json precedence
-	Flag7 string // Test environmental variable retrieval and json overwritting.  No default, or CLI. - Env precedence
-	Flag8 string // Test environmental value expansion from value in json config.
+	Flag1   string // Set by flag default, json, and CLI - CLI precedence
+	Flag2   string // Set by json only - json precedence
+	Flag3   string // Set by flag default only - default precedence
+	Flag4   string // Set by json and flag default - json precedence
+	Flag5   int    // json only int - json precedence
+	Flag6   int    // json with flag default int - json precedence
+	Flag7   string // Test environmental variable retrieval and json overwritting.  No default, or CLI. - Env precedence
+	Flag7x1 string // Test expanding the default flag value ($FLAG7) with a variable to an environmental variable."
+	Flag8   string // Test environmental value expansion from value in json config.
 }
 
 // flags holds all flag definitions for CLI and application set.
@@ -28,6 +29,7 @@ func flags() {
 	flag.StringVar(&tc.Flag4, "flag4", "defaultFlag4", "flag4Desc")
 	flag.IntVar(&tc.Flag6, "flag6", 1, "flag6Desc") // Set default value to something other than 6 for testing.
 	flag.StringVar(&tc.Flag7, "flag7", "defaultFlag7", "Flag7's value comes from environmental variable.")
+	flag.StringVar(&tc.Flag7x1, "", "$FLAG7", "Flag71's value comes from expanding the default flag value ($FLAG7) with a variable to an environmental variable.")
 	flag.StringVar(&tc.Flag8, "flag8", "defaultFlag8", "Flag8 test environmental expansion.")
 
 	Parse(&tc)
@@ -36,5 +38,5 @@ func flags() {
 // Example prints out values
 func Example() {
 	fmt.Println(tc)
-	// Output: {cliFlag1 jsonFlag2 defaultFlag3 jsonFlag4 5 6 FLAG7VALUE Flag8Env}
+	// Output: {cliFlag1 jsonFlag2 defaultFlag3 jsonFlag4 5 6 FLAG7VALUE FLAG7VALUE Flag8Env}
 }
