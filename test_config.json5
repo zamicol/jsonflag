@@ -3,12 +3,10 @@
     "flag2": "jsonFlag2",
     "flag4": "jsonFlag4",
     "flag5": 5,
-		"flag6": 6,
+		"flagsix": 6,
 		"flag7": "jsonFlag7",
 		"flag8":"$Flag8", // This package is cool with trailing commas in JSON.  
 	// OMG!  Was that just a comment in a JSON config?
-	// How is the world not exploding?  Why isn't timespace rip asunder?  
-	// Remember saammer:
 	/* 
 	Douglas Crockford
 	Apr 30, 2012
@@ -22,9 +20,4 @@
 	to annotate. Go ahead and insert all the comments you like. Then pipe it 
 	through JSMin before handing it to your JSON parser.
 	*/
-	//
-	// Hot diggity dawng!  Comments in JSON used in the use case mentioned by its 
-	// author.  
-	//
-	// Hot diggity indeed.  
 }
