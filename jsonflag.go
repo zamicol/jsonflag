@@ -57,9 +57,9 @@
 // Testing
 //
 // Since this package uses flag, test functions need a cli flag passed to verify
-// cli parsing is working.  Test will fail otherwise.
+// cli parsing is working.  Test will otherwise fail.
 //
-//  FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 --config=test_config.json5
+//  JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 --config=test_config.json5
 //
 //
 

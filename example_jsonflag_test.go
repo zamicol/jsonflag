@@ -39,7 +39,7 @@ func flags() {
 	Parse(&tc)
 
 	EnvPrefix = "JSONFLAG_"
-	flag.StringVar(&tc2.Flag10, "flag10", "", "Flag10 tests prefixxing the string \"FLAG\" to env vars, and uses $FLAG7's value for testing with a variable to an environmental variable.")
+	flag.StringVar(&tc2.Flag10, "flag10", "", "Flag10 tests prefixing the EnvPrefix to env vars")
 	Parse(&tc2)
 }
 
