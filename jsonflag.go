@@ -68,7 +68,9 @@ package jsonflag
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -103,8 +105,17 @@ func parseJSON(configPath string, c interface{}) {
 	if configPath == "" {
 		return
 	}
+	var err error
+	// Expand and env vars
+	configPath, err = filepath.Abs(os.ExpandEnv(configPath))
+	if err != nil {
+		fmt.Printf("jsonflag: unable to expand config path: '%s'", configPath)
+		panic(err)
+	}
+
 	file, err := os.Open(configPath)
 	if err != nil {
+		fmt.Printf("jsonflag: config '%s' not found", configPath)
 		panic(err)
 	}
 	defer file.Close()
