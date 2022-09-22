@@ -79,7 +79,11 @@ import (
 
 // Path defines default path.
 // This will be relative to pwd.
-var Path = flag.String("config", "config.json5", "Path to json config file.")
+var Path string
+
+func init() {
+	flag.StringVar(&Path, "config", "config.json5", "Path to json config file.")
+}
 
 // EnvPrefix will be prepended to flag names if set.
 // Example, flag with the name "flag1" and a prefix of "MYAPP_" will become "MYAPP_FLAG1"
@@ -91,7 +95,7 @@ func Parse(c interface{}) {
 	flag.Parse()
 
 	// Parse the JSON config.  Set values will overwrite values set from environmental settings.
-	parseJSON(*Path, c)
+	parseJSON(Path, c)
 
 	// Get Environmental variables.
 	flag.VisitAll(env)
@@ -109,13 +113,14 @@ func parseJSON(configPath string, c interface{}) {
 	// Expand and env vars
 	configPath, err = filepath.Abs(os.ExpandEnv(configPath))
 	if err != nil {
-		fmt.Printf("jsonflag: unable to expand config path: '%s'", configPath)
+		err = fmt.Errorf("%w; jsonflag: unable to expand config path: '%s'", err, configPath)
 		panic(err)
 	}
 
+	fmt.Sprintf("jsonflag: Config path: %s", configPath)
 	file, err := os.Open(configPath)
 	if err != nil {
-		fmt.Printf("jsonflag: config '%s' not found", configPath)
+		err = fmt.Errorf("%w; jsonflag:  config '%s' not found.", err, configPath)
 		panic(err)
 	}
 	defer file.Close()
@@ -126,6 +131,7 @@ func parseJSON(configPath string, c interface{}) {
 	decoder := json.NewDecoder(r)
 	err = decoder.Decode(c)
 	if err != nil {
+		err = fmt.Errorf("%w; jsonflag: unable to decode config", err)
 		panic(err)
 	}
 
