@@ -85,8 +85,8 @@ func init() {
 	flag.StringVar(&Path, "config", "config.json5", "Path to json config file.")
 }
 
-// EnvPrefix will be prepended to flag names if set.
-// Example, flag with the name "flag1" and a prefix of "MYAPP_" will become "MYAPP_FLAG1"
+// EnvPrefix will be prepended to flag names if set. For example, with a prefix
+// of "MYAPP_", the flag "flag1" will become "MYAPP_FLAG1".
 var EnvPrefix = ""
 
 // Parse reads config file and parses cli flags into c by calling flag.Parse()
@@ -94,7 +94,8 @@ func Parse(c interface{}) {
 	// Call Parse() for the first time to get default config path if set.
 	flag.Parse()
 
-	// Parse the JSON config.  Set values will overwrite values set from environmental settings.
+	// Parse the JSON config.  Set values will overwrite values set from
+	// environmental settings.
 	parseJSON(Path, c)
 
 	// Get Environmental variables.
@@ -109,15 +110,15 @@ func parseJSON(configPath string, c interface{}) {
 	if configPath == "" {
 		return
 	}
+
 	var err error
 	// Expand and env vars
 	configPath, err = filepath.Abs(os.ExpandEnv(configPath))
 	if err != nil {
-		err = fmt.Errorf("%w; jsonflag: unable to expand config path: '%s'", err, configPath)
+		err = fmt.Errorf("%w; jsonflag: cannot get absolute config path: '%s'", err, configPath)
 		panic(err)
 	}
 
-	fmt.Sprintf("jsonflag: Config path: %s", configPath)
 	file, err := os.Open(configPath)
 	if err != nil {
 		err = fmt.Errorf("%w; jsonflag:  config '%s' not found.", err, configPath)
@@ -140,16 +141,22 @@ func parseJSON(configPath string, c interface{}) {
 	expand(v)
 }
 
-// Expand expands any environmental variables in config settings recursively.
-// For example, on a system where $USER is set to user, $USER will become 'user'
+// Expand recursively expands from interface{} any structs, slices, pointers,
+// and maps looking for variables with the  underlying type of string.  If the
+// underlying type is string, it will attempt to expand any environmental
+// variable.
+//
+// For an environmental variable expansion example, on a system where $USER is
+// set to user, $USER will become 'user'
 func expand(v reflect.Value) {
 
 	switch v.Kind() {
+	default:
+		// Leave other types untouched as only variables with the underlying type of
+		// string is of interest.
 	case reflect.Ptr:
-		// Get pointer for reflection
-		vv := v.Elem()
-		// for nil pointers
-		if !vv.IsValid() {
+		vv := v.Elem()     // Get value pointer is pointing to.
+		if !vv.IsValid() { // For nil pointers
 			return
 		}
 		expand(vv)
@@ -166,7 +173,7 @@ func expand(v reflect.Value) {
 			expand(v.MapIndex(key))
 		}
 	case reflect.String:
-		str := v.Interface().(string)
+		str := v.String()
 		// Expand possible environmental variable in config value.
 		str = os.ExpandEnv(str)
 		v.SetString(str) // Value must be exported.
