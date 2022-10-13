@@ -89,11 +89,8 @@ func init() {
 // of "MYAPP_", the flag "flag1" will become "MYAPP_FLAG1".
 var EnvPrefix = ""
 
-// Parse reads config file and parses cli flags into c by calling flag.Parse()
+// Parse reads config file and parses cli flags into c by calling flag.Parse().  Call Init() before to set config
 func Parse(c interface{}) {
-	// Call Parse() for the first time to get default config path if set.
-	flag.Parse()
-
 	// Parse the JSON config.  Set values will overwrite values set from
 	// environmental settings.
 	parseJSON(Path, c)
@@ -102,6 +99,22 @@ func Parse(c interface{}) {
 	flag.VisitAll(env)
 
 	// Call again to overwrite json values with flags.
+	flag.Parse()
+}
+
+// Env sets Environmental values on all flags based on flag name.
+func env(f *flag.Flag) {
+	v := os.Getenv(EnvPrefix + strings.ToUpper(f.Name))
+	if v != "" {
+		flag.Set(f.Name, v)
+	}
+}
+
+func Init() {
+	// Call Parse() for the first time to get default config path if set.
+	// TODO Fix this so there doesn't need to be a double call. `--help`` doesn't
+	// work because we call parse twice.  Either change jsonflag package or
+	// forward help to second config.
 	flag.Parse()
 }
 
@@ -177,13 +190,5 @@ func expand(v reflect.Value) {
 		// Expand possible environmental variable in config value.
 		str = os.ExpandEnv(str)
 		v.SetString(str) // Value must be exported.
-	}
-}
-
-// Env sets Environmental values on all flags based on flag name.
-func env(f *flag.Flag) {
-	v := os.Getenv(EnvPrefix + strings.ToUpper(f.Name))
-	if v != "" {
-		flag.Set(f.Name, v)
 	}
 }
