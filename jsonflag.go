@@ -29,8 +29,7 @@
 //  2. Exact case
 //  3. Case insensitive
 //
-//
-// Recommended Usage
+// # Recommended Usage
 //
 // See testing for an example.
 //
@@ -41,28 +40,23 @@
 //
 // The config struct is now appropriately populated.
 //
-//
-// Config Path
+// # Config Path
 //
 // You can set the config path via the cli,
 //
-//  --config=your_config.json
+//	--config=your_config.json
 //
 // You can also set it in your application.  Note that this can be overwritten
 // by the normal precedence via a cli flag as previously mentioned.
 //
-//  jsonflag.Path = "assets/config.json"
+//	jsonflag.Path = "assets/config.json"
 //
-//
-// Testing
+// # Testing
 //
 // Since this package uses flag, test functions need a cli flag passed to verify
 // cli parsing is working.  Test will otherwise fail.
 //
-//  JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 --config=test_config.json5
-//
-//
-
+//	JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 --config=test_config.json5
 package jsonflag
 
 import (
