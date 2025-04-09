@@ -8,10 +8,8 @@ import (
 // See the package documentation on how to run a test.
 
 func TestMain(m *testing.M) {
-	// Run example.
-	flags()
-	// Must explicitly exit because of flag test
-	os.Exit(m.Run())
+	flags()          // Run example.
+	os.Exit(m.Run()) // Must explicitly exit because of flag test
 }
 
 // Golden test values.

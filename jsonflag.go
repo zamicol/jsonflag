@@ -29,6 +29,8 @@
 //  2. Exact case
 //  3. Case insensitive
 //
+// CLI names must start with lower case.
+//
 // # Recommended Usage
 //
 // See testing for an example.
@@ -51,12 +53,30 @@
 //
 //	jsonflag.Path = "assets/config.json"
 //
+// # Design
+//
+// This package follows flag.Parse() fail fast design and panics on error.
+//
 // # Testing
 //
 // Since this package uses flag, test functions need a cli flag passed to verify
 // cli parsing is working.  Test will otherwise fail.
 //
+// Test 1 (tests --config= form):
+//
 //	JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 --config=test_config.json5
+//
+// Test 2 (tests -config= form):
+//
+// JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 -config=test_config.json5
+//
+// Test 3 (tests --config form):
+//
+// JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 --config test_config.json5
+//
+// Test 4 (tests -config form):
+//
+// JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 -config test_config.json5
 package jsonflag
 
 import (
@@ -71,32 +91,49 @@ import (
 	"github.com/DisposaBoy/JsonConfigReader"
 )
 
-// Path defines default path.
-// This will be relative to pwd.
+// Path defines the default config path and is relative to pwd.
 var Path string
-
-func init() {
-	flag.StringVar(&Path, "config", "config.json5", "Path to json config file.")
-}
 
 // EnvPrefix will be prepended to flag names if set. For example, with a prefix
 // of "MYAPP_", the flag "flag1" will become "MYAPP_FLAG1".
 var EnvPrefix = ""
 
-// Parse reads config file and parses cli flags into c by calling flag.Parse().  Call Init() before to set config
+func init() {
+	flag.StringVar(&Path, "config", "config.json5", "Path to json config file.")
+}
+
+// Parse reads the config file and parses CLI flags into c with a single flag.Parse() call.
 func Parse(c interface{}) {
-	// Parse the JSON config.  Set values will overwrite values set from
-	// environmental settings.
+	// Manually extract --config or -config from os.Args instead of calling
+	// flag.Parse twice. By avoiding calling flag.Parse() twice help works as
+	// expected.
+	for i := 1; i < len(os.Args); i++ { // Start at 1 to skip program name.
+		arg := os.Args[i]
+		if arg == "--config" || arg == "-config" {
+			if i+1 < len(os.Args) && !strings.HasPrefix(os.Args[i+1], "-") {
+				Path = os.Args[i+1]
+				break
+			}
+		} else if strings.HasPrefix(arg, "--config=") {
+			Path = strings.TrimPrefix(arg, "--config=")
+			break
+		} else if strings.HasPrefix(arg, "-config=") {
+			Path = strings.TrimPrefix(arg, "-config=")
+			break
+		}
+	}
+
+	// Parse the JSON config first, using the determined Path.
 	parseJSON(Path, c)
 
-	// Get Environmental variables.
+	// Set environmental variables on all flags.
 	flag.VisitAll(env)
 
-	// Call again to overwrite json values with flags.
+	// Single call to parse CLI flags, overriding JSON/env values as needed.
 	flag.Parse()
 }
 
-// Env sets Environmental values on all flags based on flag name.
+// env sets environmental values on all flags based on flag name.
 func env(f *flag.Flag) {
 	v := os.Getenv(EnvPrefix + strings.ToUpper(f.Name))
 	if v != "" {
@@ -104,46 +141,35 @@ func env(f *flag.Flag) {
 	}
 }
 
-func Init() {
-	// Call Parse() for the first time to get default config path if set.
-	// TODO Fix this so there doesn't need to be a double call. `--help`` doesn't
-	// work because we call parse twice.  Either change jsonflag package or
-	// forward help to second config.
-	flag.Parse()
-}
-
-// parseJSON parses json file configPath into the config struct c.
+// parseJSON parses the JSON file at configPath into the config struct c.
 func parseJSON(configPath string, c interface{}) {
 	if configPath == "" {
 		return
 	}
 
 	var err error
-	// Expand and env vars
 	configPath, err = filepath.Abs(os.ExpandEnv(configPath))
 	if err != nil {
 		err = fmt.Errorf("%w; jsonflag: cannot get absolute config path: '%s'", err, configPath)
-		panic(err)
+		panic(err) // Fail fast matching flag.Parse() error reporting.
 	}
 
 	file, err := os.Open(configPath)
 	if err != nil {
-		err = fmt.Errorf("%w; jsonflag:  config '%s' not found.", err, configPath)
-		panic(err)
+		err = fmt.Errorf("%w; jsonflag: config '%s' not found", err, configPath)
+		panic(err) // Fail fast matching flag.Parse() error reporting.
 	}
 	defer file.Close()
 
-	// wrap reader before passing it to the json decoder for comment stripping
 	r := JsonConfigReader.New(file)
-
 	decoder := json.NewDecoder(r)
 	err = decoder.Decode(c)
 	if err != nil {
 		err = fmt.Errorf("%w; jsonflag: unable to decode config", err)
-		panic(err)
+		panic(err) // Fail fast matching flag.Parse() error reporting.
 	}
 
-	// Expand env variables in config struct.
+	// Expand env variables in the config struct.
 	v := reflect.ValueOf(c)
 	expand(v)
 }
@@ -156,11 +182,7 @@ func parseJSON(configPath string, c interface{}) {
 // For an environmental variable expansion example, on a system where $USER is
 // set to user, $USER will become 'user'
 func expand(v reflect.Value) {
-
 	switch v.Kind() {
-	default:
-		// Leave other types untouched as only variables with the underlying type of
-		// string is of interest.
 	case reflect.Ptr:
 		vv := v.Elem()     // Get value pointer is pointing to.
 		if !vv.IsValid() { // For nil pointers
@@ -181,8 +203,7 @@ func expand(v reflect.Value) {
 		}
 	case reflect.String:
 		str := v.String()
-		// Expand possible environmental variable in config value.
 		str = os.ExpandEnv(str)
-		v.SetString(str) // Value must be exported.
+		v.SetString(str)
 	}
 }

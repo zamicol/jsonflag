@@ -5,29 +5,29 @@ import (
 	"fmt"
 )
 
-// Create a new config.
+// Create two new configs.  Typical usage uses only one config.
 var tc Config
 var tc2 Config2
 
 // Config's values must be exported
 type Config struct {
-	Flag1 string // Set by flag default, json, and CLI - CLI precedence
-	Flag2 string // Set by json only - json precedence
+	Flag1 string // Set by flag default, JSON, and CLI - CLI precedence
+	Flag2 string // Set by JSON only - JSON precedence
 	Flag3 string // Set by flag default only - default precedence
-	Flag4 string // Set by json and flag default - json precedence
-	Flag5 int    // json only int - json precedence
-	Flag6 int    `json:"flagsix"` // json with flag default int - json precedence.  Tests also tags.
-	Flag7 string // Test environmental variable retrieval and json overwritting.  No default, or CLI. - Env precedence
-	Flag8 string // Test environmental value expansion from value in json config.
+	Flag4 string // Set by JSON and flag default - JSON precedence
+	Flag5 int    // Set by JSON only int - JSON precedence
+	Flag6 int    `json:"flagsix"` // JSON with flag default int - JSON precedence.  Also tests tags.
+	Flag7 string // Set by environmental variable and JSON.  No default, or CLI. - Env precedence
+	Flag8 string // Set by environmental value expansion from value in JSON config.
 	Flag9 string // Test expanding the default flag value ($FLAG7) with a variable to an environmental variable."
 }
 
 type Config2 struct {
-	Flag10 string // Test EnvPrefix.  CLI only.
+	Flag10 string // Test EnvPrefix.  Value is set by CLI only.
 }
 
 // flags holds all flag definitions for CLI and application set.
-// Flag 2 and 5 are missing to test jsons values which will still populate.
+// Flag 2 and 5 are missing to test JSON values which will still populate.
 func flags() {
 	flag.StringVar(&tc.Flag1, "flag1", "defaultFlag1", "flag1Desc")
 	flag.StringVar(&tc.Flag3, "flag3", "defaultFlag3", "flag3Desc")
