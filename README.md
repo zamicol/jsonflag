@@ -4,22 +4,27 @@
 [![GoDoc](https://godoc.org/github.com/zamicol/jsonflag?status.svg)](https://godoc.org/github.com/zamicol/jsonflag)
 
 
-jsonflag is an almost drop in replacement for Go's flag package that supports
-configs (JSON/JSON5), environmental variables, and CLI options.
+jsonflag is an almost drop in replacement for Go's flag package that seamlessly
+adds support for configs (JSON/JSON5), environmental variables, and CLI options.
 
-Values set by a higher precedence overwrite values set by a lower precedence.
-This makes testing using CLI or environmental variables easy. 
+Values set by a higher precedence overwrite values set by a lower precedence,
+**CLI > Env > JSON > Defaults**. This makes testing using CLI or Env variables
+easy.
 
-Order of precedence for set config values :
+Order of precedence:
 
- 1. Command line flags         (cli Example: `--flag1=Flag1Value`)
- 2. Environmental Variables    (env Example: FLAG2=Flag2value)
- 3. JSON config values         (json Example: `{"flag3": "Flag3Value"}`)
- 4. Default values set on flag (go Example: `flag.StringVar(&config.Flag4,
+ 1. Command line flags         (CLI example: `--flag1=Flag1Value`)
+ 2. Environmental variables    (Env example: FLAG2=Flag2value)
+ 3. JSON config values         (JSON example: `{"flag3": "Flag3Value"}`)
+ 4. Default values set on flag (Go example: `flag.StringVar(&config.Flag4,
     "Flag4Name", "Flag4DefaultValue", "Flag4Description")`)
 
-To overwrite a value, say on the config, a CLI parameter may be
-set `FLAG1=Flag1EnvValue go run --flag2=flag2CliValue`
+To overwrite a value, a CLI parameter may be set `go run main.go
+--flag1=flag1CliValue`.  
+
+Environmental variables may also be set via CLI, for example:
+`FLAG1=Flag1EnvValue go run main.go`, but they are lower priority than CLI
+flags.
 
 ## Config Path
 
@@ -31,9 +36,17 @@ directory. The config path can be specified in two ways:
 go run main.go --config=test_config.json
 ```
 
-2. Programmatically in your Go code:
+2. Programmatically in your Go code, add the line `jsonflag.Path = "test_config.json"`:
 ```go
-jsonflag.Path = "test_config.json"
+type Config struct {
+	Flag1 string
+}
+func main(){
+	var config Config
+	flag.StringVar(&config.Flag1, "Flag1Name", "Flag1DefaultValue", "Flag1Description")
+	jsonflag.Path = "test_config.json"
+	jsonflag.Parse(&config)
+}
 ```
 
 
@@ -58,7 +71,7 @@ Example `config.json5` file:
 {
 "flag1": "jsonFlag1",
 "flag2": "jsonFlag2",
-"flag3": 3,  // Comments and trailing commas in JSON5 configs are recommended.  
+"flag3": 3,  // Comments and trailing commas are supported in JSON5 configs and encouraged for readability. 
 }
 ```
 
@@ -84,9 +97,10 @@ func main(){
 }
 ```
 
-The default values will be overwritten by the values in the JSON config, which may further be overwritten by environmental variables and CLI parameters. For example
+The default values will be overwritten by the values in the JSON config, which may further be overwritten by environmental variables and CLI parameters.
 
-Example overwriting values using environmental variable and command line options:
+Example overwriting values using an environmental variable and command line flag:
+
 ```
 FLAG2=Flag2EnvValue go run main.go --flag1=Flag1CLIValue
 
@@ -95,10 +109,23 @@ FLAG2=Flag2EnvValue go run main.go --flag1=Flag1CLIValue
 Which will result in the final values being used:
 
 ```
-Flag1 = Flag1CLIValue  // From command line flag. 
-Flag2 = Flag2EnvValue // From environmental variable. 
-Flag3 = 3 // From JSON file. 
+Flag1 = Flag1CLIValue   // From command line flag. 
+Flag2 = Flag2EnvValue   // From environmental variable. 
+Flag3 = 3               // From JSON file. 
 ```
 
+# Letter Casing For Flag Names
+Flag naming conventions vary by input type. 
+
+CLI flag names (not values) must start with lowercase letters (e.g., --flag1).
+
+For environmental variables, the flag’s name is converted to all uppercase, meaning environmental flag names (not values) are case insensitive.
+
+For JSON names, this package uses Go’s json package for decoding. The JSON decoder only has access to exported fields of structs and follows its own precedence for JSON decoding:
+ 1. Tags
+ 2. Exact case
+ 3. Case insensitive
+
+The name set by the Go flag package may be upper or lower case, but uppercase is recommended to align with Go naming conventions for exported fields.
 
 [See also the godocs for more complete documentation and a working example.](https://godoc.org/github.com/zamicol/jsonflag)

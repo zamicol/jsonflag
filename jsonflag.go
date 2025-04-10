@@ -1,82 +1,70 @@
-// Package jsonflag is for configuration settings.  It extends Go's flag
-// package, designed for cli flags, with json config files and environmental
-// variables.  It does not replace any part of flag.
+// Package jsonflag provides configuration settings by extending Go's flag
+// package with support for JSON/JSON5 config files and environmental variables.
+// It does not replace any part of the flag package.
 //
-// Order of precedence for set config values:
+// Order of precedence for configuration values:
+//  1. Command-line flags (e.g., `--flag1=flag1Value`)
+//  2. Environmental variables (e.g., FLAG2=flag2value)
+//  3. JSON config values (e.g., `{"flag3": "flag3Value"}`)
+//  4. Default values set on flags (e.g., flag.StringVar(&config.Flag4, "flag4Name", "flag4DefaultValue", "flag4Description"))
 //
-//  1. Command line flags. (cli Example: `--flag1=flag1Value`)
-//  2. Environmental Variables (env Example: FLAG2=flag2value)
-//  3. JSON config values. (json Example: `{"flag3": "flag3Value"}`)
-//  4. Default values set on flag. (go Example: `flag.StringVar(&config.Flag4, "flag4Name", "flag4DefaultValue", "flag4Description")`)
+// Flag values are optional in the JSON config file and can be omitted if desired.
+// Unrecognized JSON config values (those not in the config struct or unexported)
+// are ignored. To prevent a value from being set by flags, include it in the
+// config struct and JSON config file; it will still be populated.
 //
-// Flag values do not need to appear in the json config file and can be left
-// blank if desired. If not set in config struct or exported, extra json config
-// file values will be ignored. If a value should not be set by flags, add the
-// value in the config struct and json config file.  It will still be set.
+// Environmental variables in JSON configs are expanded. See the Testing section
+// for an example where "$Flag8" is replaced with its environmental value.
 //
-// Environmental variables can be set using the flag name.  The flag's name will
-// be converted to all upper case.  If set, "EnvPrefix" will be prefixed when
-// looking up environment variables.
+// # Letter Casing for Flag Names
 //
-// Environmental variables in json config will be expanded.  See testing for an
-// example where "$Flag8" is expanded.
-//
-// This package uses Go's json package for decoding.  The json decoder only
-// has accesses to exported fields of structs and follows its own
-// precedence for json decoding:
-//
-//  1. Tags
-//  2. Exact case
-//  3. Case insensitive
-//
-// CLI names must start with lower case.
+// Flag naming conventions vary by input type:
+//   - CLI flag names (not values) must start with lowercase letters (e.g., --flag1).
+//   - For environmental variables, flag names are converted to all uppercase,
+//     making them case-insensitive (e.g., FLAG1 or flag1 both work).
+//   - For JSON names, this package uses Go's json package for decoding. The JSON
+//     decoder only accesses exported struct fields and follows this precedence:
+//     1. Tags
+//     2. Exact case
+//     3. Case-insensitive
+//   - Flag names in Go code (via the flag package) can be upper or lowercase, but
+//     uppercase is recommended to match Go conventions for exported fields.
 //
 // # Recommended Usage
 //
-// See testing for an example.
-//
-//  1. Define a `config` struct with exported fields.
-//  2. Use flag's functions to set default config values. `flag.StringVar(&config.Flag1, "flag1Name", "flag1DefaultValue", "flag1Description")`
-//  3. Put config values in a `config.json` file. The config file path defaults to the cwd.  You can use `--config=your_config.json` to point somewhere else.
-//  4. Call `jsonflag.Parse(&config)`
-//
-// The config struct is now appropriately populated.
+// See the Testing section for a full example.
+//  1. Define a config struct with exported fields.
+//  2. Use flag functions to set defaults (e.g., flag.StringVar(&config.Flag1, "flag1Name", "flag1DefaultValue", "flag1Description")).
+//  3. Add config values to a config.json file (defaults to the current working directory).
+//     Use --config=your_config.json to specify a different path.
+//  4. Call jsonflag.Parse(&config) to populate the config struct.
 //
 // # Config Path
 //
-// You can set the config path via the cli,
+// Set the config path via command-line:
 //
 //	--config=your_config.json
 //
-// You can also set it in your application.  Note that this can be overwritten
-// by the normal precedence via a cli flag as previously mentioned.
+// Or programmatically (note: CLI flags take precedence over this):
 //
 //	jsonflag.Path = "assets/config.json"
 //
 // # Design
 //
-// This package follows flag.Parse() fail fast design and panics on error.
+// This package follows flag.Parse()'s fail-fast design and panics on error.
 //
 // # Testing
 //
-// Since this package uses flag, test functions need a cli flag passed to verify
-// cli parsing is working.  Test will otherwise fail.
-//
-// Test 1 (tests --config= form):
-//
-//	JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 --config=test_config.json5
-//
-// Test 2 (tests -config= form):
-//
-// JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 -config=test_config.json5
-//
-// Test 3 (tests --config form):
-//
-// JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 --config test_config.json5
-//
-// Test 4 (tests -config form):
-//
-// JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 -config test_config.json5
+// Since jsonflag builds on flag, tests must include CLI flags to verify parsing.
+// Without flags, tests may fail. Example test commands:
+//   - Test 1 (tests --config= form):
+//     JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 --config=test_config.json5
+//   - Test 2 (tests -config= form):
+//     JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 -config=test_config.json5
+//   - Test 3 (tests --config form):
+//     JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 --config test_config.json5
+//   - Test 4 (tests -config form):
+//     JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 -config test_config.json5
 package jsonflag
 
 import (
