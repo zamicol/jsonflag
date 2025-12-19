@@ -1,0 +1,5 @@
+{
+	"count": 20,
+	"timeout": "10s",
+	// threshold omitted to test default
+}

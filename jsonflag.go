@@ -7,6 +7,7 @@
 //  2. Environmental variables (e.g., FLAG2=flag2value)
 //  3. JSON config values (e.g., `{"flag3": "flag3Value"}`)
 //  4. Default values set on flags (e.g., flag.StringVar(&config.Flag4, "flag4Name", "flag4DefaultValue", "flag4Description"))
+//     or via struct tags (e.g., `default:"flag4DefaultValue"`)
 //
 // Flag values are optional in the JSON config file and can be omitted if desired.
 // Unrecognized JSON config values (those not in the config struct or unexported)
@@ -33,8 +34,17 @@
 // # Recommended Usage
 //
 // See the Testing section for a full example.
-//  1. Define a config struct with exported fields.
-//  2. Use flag functions to set defaults (e.g., flag.StringVar(&config.Flag1, "flag1Name", "flag1DefaultValue", "flag1Description")).
+//  1. Define a config struct with exported fields, optionally using tags:
+//     ```go
+//     type Config struct {
+//     Flag1 string `flag:"flag1" default:"flag1Default" desc:"flag1 description"`
+//     Flag2 string // No tags or flags are still okay.
+//     }
+//     ```
+//  2. For non-tag usage, (drop in replacement for Go's `flag` package) use flag functions to set defaults:
+//     ```go
+//     flag.StringVar(&config.Flag2, "flag2Name", "flag2DefaultValue", "flag2Description")
+//     ```
 //  3. Add config values to a config.json file (defaults to the current working directory).
 //     Use --config=your_config.json to specify a different path.
 //  4. Call jsonflag.Parse(&config) to populate the config struct.
@@ -54,6 +64,7 @@
 // This package follows flag.Parse()'s fail-fast design and panics on error.
 //
 // # Testing
+// `go test` will fail.
 //
 // Since jsonflag builds on flag, tests must include CLI flags to verify parsing.
 // Without flags, tests may fail. Example test commands:
@@ -74,7 +85,9 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/DisposaBoy/JsonConfigReader"
 )
@@ -84,6 +97,10 @@ var Path string
 
 // EnvPrefix will be prepended to flag names if set. For example, with a prefix
 // of "MYAPP_", the flag "flag1" will become "MYAPP_FLAG1".
+//
+// Prefixes are useful for namespacing configurations, ensuring any potential
+// name collisions with existing environmental variables are explicitly
+// precluded.
 var EnvPrefix = ""
 
 func init() {
@@ -113,6 +130,9 @@ func Parse(c interface{}) {
 
 	// Parse the JSON config first, using the determined Path.
 	parseJSON(Path, c)
+
+	// Register flags from struct tags if not already defined
+	registerTagFlags(c)
 
 	// Set environmental variables on all flags.
 	flag.VisitAll(env)
@@ -162,8 +182,130 @@ func parseJSON(configPath string, c interface{}) {
 	expand(v)
 }
 
+// registerTagFlags registers flags based on struct tags if not already defined.
+func registerTagFlags(c interface{}) {
+	v := reflect.ValueOf(c)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	if v.Kind() != reflect.Struct {
+		return
+	}
+
+	t := v.Type()
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		fv := v.Field(i)
+
+		// Skip unexported fields
+		if !fv.CanSet() {
+			continue
+		}
+
+		// Get tag values
+		flagName := field.Tag.Get("flag")
+		defaultVal := field.Tag.Get("default")
+		desc := field.Tag.Get("desc")
+
+		// Default flag name to field name (lowercase) if not specified
+		if flagName == "" {
+			flagName = strings.ToLower(field.Name)
+		}
+
+		// Skip if flag already defined (preserves manual flag definitions)
+		if flag.Lookup(flagName) != nil {
+			continue
+		}
+
+		// Only register flags for fields with explicit tags
+		hasTag := field.Tag.Get("flag") != "" || field.Tag.Get("default") != "" || field.Tag.Get("desc") != ""
+		if !hasTag {
+			continue
+		}
+
+		// Register flags based on field type
+		switch field.Type.Kind() {
+		case reflect.String:
+			flag.StringVar(fv.Addr().Interface().(*string), flagName, defaultVal, desc)
+		case reflect.Int:
+			var def int
+			if defaultVal != "" {
+				var err error
+				def, err = strconv.Atoi(defaultVal)
+				if err != nil {
+					panic(fmt.Errorf("jsonflag: invalid default int value for %s: %v", flagName, err))
+				}
+			}
+			flag.IntVar(fv.Addr().Interface().(*int), flagName, def, desc)
+		case reflect.Int64:
+			if field.Type == reflect.TypeOf(time.Duration(0)) {
+				var def time.Duration
+				if defaultVal != "" {
+					var err error
+					def, err = time.ParseDuration(defaultVal)
+					if err != nil {
+						panic(fmt.Errorf("jsonflag: invalid default duration value for %s: %v", flagName, err))
+					}
+				}
+				flag.DurationVar(fv.Addr().Interface().(*time.Duration), flagName, def, desc)
+			} else {
+				var def int64
+				if defaultVal != "" {
+					var err error
+					def, err = strconv.ParseInt(defaultVal, 10, 64)
+					if err != nil {
+						panic(fmt.Errorf("jsonflag: invalid default int64 value for %s: %v", flagName, err))
+					}
+				}
+				flag.Int64Var(fv.Addr().Interface().(*int64), flagName, def, desc)
+			}
+		case reflect.Uint:
+			var def uint
+			if defaultVal != "" {
+				var err error
+				def64, err := strconv.ParseUint(defaultVal, 10, 32)
+				if err != nil {
+					panic(fmt.Errorf("jsonflag: invalid default uint value for %s: %v", flagName, err))
+				}
+				def = uint(def64)
+			}
+			flag.UintVar(fv.Addr().Interface().(*uint), flagName, def, desc)
+		case reflect.Uint64:
+			var def uint64
+			if defaultVal != "" {
+				var err error
+				def, err = strconv.ParseUint(defaultVal, 10, 64)
+				if err != nil {
+					panic(fmt.Errorf("jsonflag: invalid default uint64 value for %s: %v", flagName, err))
+				}
+			}
+			flag.Uint64Var(fv.Addr().Interface().(*uint64), flagName, def, desc)
+		case reflect.Float64:
+			var def float64
+			if defaultVal != "" {
+				var err error
+				def, err = strconv.ParseFloat(defaultVal, 64)
+				if err != nil {
+					panic(fmt.Errorf("jsonflag: invalid default float64 value for %s: %v", flagName, err))
+				}
+			}
+			flag.Float64Var(fv.Addr().Interface().(*float64), flagName, def, desc)
+		case reflect.Bool:
+			var def bool
+			if defaultVal != "" {
+				var err error
+				def, err = strconv.ParseBool(defaultVal)
+				if err != nil {
+					panic(fmt.Errorf("jsonflag: invalid default bool value for %s: %v", flagName, err))
+				}
+			}
+			flag.BoolVar(fv.Addr().Interface().(*bool), flagName, def, desc)
+		}
+	}
+}
+
 // Expand recursively expands from interface{} any structs, slices, pointers,
-// and maps looking for variables with the  underlying type of string.  If the
+// and maps looking for variables with the underlying type of string. If the
 // underlying type is string, it will attempt to expand any environmental
 // variable.
 //
