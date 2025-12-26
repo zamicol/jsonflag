@@ -15,12 +15,12 @@ type TagConfig struct {
 	MaxRetries uint          `flag:"max-retries" default:"3" desc:"Max retry attempts"`
 }
 
-// Golden test values for tag-based test.
-var tagGolden = TagConfig{
-	UserName:   "cliName",        // CLI override
-	Count:      20,               // JSON value
-	Enabled:    false,            // Env override
-	Timeout:    10 * time.Second, // JSON value
-	Threshold:  0.75,             // Default value
-	MaxRetries: 5,                // Env override
-}
+// // Golden test values for tag-based test.
+// var tagGolden = TagConfig{
+// 	UserName:   "cliName",        // CLI override
+// 	Count:      20,               // JSON value
+// 	Enabled:    false,            // Env override
+// 	Timeout:    10 * time.Second, // JSON value
+// 	Threshold:  0.75,             // Default value
+// 	MaxRetries: 5,                // Env override
+// }

@@ -6,7 +6,10 @@
     "flag5": "jsonFlag5",
 		"flagsix": 6,
 		"flag7": "jsonFlag7",
-		"flag8":"$Flag8", // This package is cool with trailing commas in JSON.  
+		"flag8":"$FLAG8ENVEXPANSION", 
+		
+		
+	// This package is cool with trailing commas and comments in JSON.  
 	// OMG!  Was that just a comment in a JSON config?
 	/* 
 	Douglas Crockford
@@ -14,15 +17,12 @@
 	Comments in JSON
 
 	I removed comments from JSON because I saw people were using them to hold 
-	parsing directives, a practice which would have destroyed interoperability.  
-	I know that the lack of comments makes some people sad, but it shouldn't. 
+	parsing directives, a practice which would have destroyed interoperability.
+	I know that the lack of comments makes some people sad, but it shouldn't.
 
 	Suppose you are using JSON to keep configuration files, which you would like 
 	to annotate. Go ahead and insert all the comments you like. Then pipe it 
 	through JSMin before handing it to your JSON parser.
-
-	---
-
-	Go ahead, indeed!
 	*/
+	// Go ahead, indeed!
 }

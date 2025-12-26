@@ -4,19 +4,20 @@
 [![GoDoc](https://godoc.org/github.com/zamicol/jsonflag?status.svg)](https://godoc.org/github.com/zamicol/jsonflag)
 
 
-jsonflag is an almost drop in replacement for Go's flag package that seamlessly
-adds support for configs (JSON/JSON5), environmental variables, and CLI options.
+jsonflag is a drop in replacement and extension of Go's flag package that
+seamlessly adds support for configs (JSON/JSON5), environmental variables,
+struct tag defaults, and CLI options.  This allows configs to be more declarative and less imparitive than the Go flag library.
 
 Values set by a higher precedence overwrite values set by a lower precedence,
-**CLI > Env > JSON > Defaults**. This makes testing using CLI or Env variables
-easy.
+**CLI > Env > JSON > JSON config tag default > Flag Default**, making testing
+using Env variables, CLI, JSON tags, JSON configs, for CLI flags easy.
 
-Order of precedence:
-
+**Order of precedence**:
  1. Command line flags         (CLI example: `--flag1=Flag1Value`)
  2. Environmental variables    (Env example: FLAG2=Flag2value)
  3. JSON config values         (JSON example: `{"flag3": "Flag3Value"}`)
- 4. Default values set on flag (Go example: `flag.StringVar(&config.Flag4,
+ 4. JSON config tag default    (JSON Config struct example: `Flag6 int    `json:"9999"``)
+ 5. Default values set using go flag initialization (Go example: `flag.StringVar(&config.Flag4,
     "Flag4Name", "Flag4DefaultValue", "Flag4Description")`)
 
 To overwrite a value, a CLI parameter may be set `go run main.go
@@ -25,6 +26,11 @@ To overwrite a value, a CLI parameter may be set `go run main.go
 Environmental variables may also be set via CLI, for example:
 `FLAG1=Flag1EnvValue go run main.go`, but they are lower priority than CLI
 flags.
+
+jsonflag also supports:
+- **Default values** in tags
+- **Environmental variable expansion**  where if FLAG1=EnvFlagValue, and anywhere the value is $FLAG1, $FLAG1 will be expanded to EnvFlagValue. It does not matter where the variable is set, and `$` character is the signifier for a variable. `$
+
 
 ## Config Path
 
@@ -113,6 +119,31 @@ Flag1 = Flag1CLIValue   // From command line flag.
 Flag2 = Flag2EnvValue   // From environmental variable. 
 Flag3 = 3               // From JSON file. 
 ```
+
+
+
+## Tag
+
+// TagConfig is for testing "tag design pattern" flags
+// Config's values must be exported for package `flag` to be able to set values.
+type TagConfig struct {
+	UserName   string        `flag:"username" default:"defaultUserName" desc:"User name"`
+	Count      int           `flag:"count" default:"10" desc:"Item count"`
+	Enabled    bool          `flag:"enabled" default:"true" desc:"Feature toggle"`
+	Timeout    time.Duration `flag:"timeout" default:"5s" desc:"Operation timeout"`
+	Threshold  float64       `flag:"threshold" default:"0.75" desc:"Threshold value"`
+	MaxRetries uint          `flag:"max-retries" default:"3" desc:"Max retry attempts"`
+}
+
+
+
+
+
+
+
+
+
+
 
 # Letter Casing For Flag Names
 Flag naming conventions vary by input type. 
