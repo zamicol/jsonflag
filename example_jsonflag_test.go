@@ -17,14 +17,17 @@ import (
 // Config's values must be exported for package `flag` to be able to set values.
 type goFlagConfig struct {
 	Flag1 string // Set by flag default, JSON, and CLI - CLI precedence
-	Flag2 string // Set by JSON only     - JSON precedence
-	Flag3 int    // Set by JSON only int - JSON precedence
-	Flag4 string // Set by flag default only - Default precedence
-	Flag5 string // Set by JSON and flag default - JSON precedence
-	Flag6 int    `json:"9999"` // Tests JSON tag. JSON with flag default int and JSON tag - (Three places are set: flag default, json tag, and JSON) - JSON precedence.
-	Flag7 string // Set by environmental variable, flag default, and JSON. No CLI - Env precedence
-	Flag8 string // Set by environmental value expansion.  Expansion variable set in ENV and pre-expansion value set in JSON config.
-	Flag9 string // Test expanding the default flag value ($FLAG9) with a value from an environmental variable. No JSON or CLI.
+	Flag2 string // Set by JSON (string) only     - JSON precedence
+	Flag3 int    // Set by JSON (int)    only     - JSON precedence
+	Flag4 string // Set by flag default only      - Flag default precedence
+	Flag5 string // Set by JSON and flag default  - JSON precedence
+
+	// Environment Variables (EnvVars) and environmental variable expansion
+	Flag6 string // Set by environmental variable, flag default, and JSON. No CLI, no expansion. - Env precedence
+	Flag7 string // Set by environmental value expansion, flag default, and JSON (pre-expansion).  No pure environmental value or CLI. - JSON precedence then unexpanded.
+	Flag8 string // Test expanding the flag default value ($FlagDefault8) with a value from an environmental variable. No JSON or CLI.  Expansion variable set in ENV and pre-expansion value set in JSON config.
+
+	//Flag6 int    `json:"9999"` // Tests JSON tag. JSON with flag default int and JSON tag - (Three places are set: flag default, json tag, and JSON) - JSON precedence.
 }
 
 // fc is the global for Go Flag examples.
@@ -33,22 +36,27 @@ var fc goFlagConfig
 // exampleInitFlags is an example of using jsonflag as a drop-in replacement for Go's flag.  Do not run in testing since it is not exported.
 // how an application can initialize flag definitions using the "Go flag" design pattern.
 func exampleInitGoFlagConfig() {
-	flag.StringVar(&fc.Flag1, "flag1", "flagDefaultFlag1", "flag1Desc")
+	flag.StringVar(&fc.Flag1, "flag1", "flagDefault1", "flag1Desc") // Basic CLI flag
 	// Flag 2 and 3 are missing here in order to test values that populate only from the JSON config.
-	flag.StringVar(&fc.Flag4, "flag4", "flagDefaultFlag4", "flag4Desc")
-	flag.StringVar(&fc.Flag5, "flag5", "flagDefaultFlag5", "flag5Desc")
-	flag.IntVar(&fc.Flag6, "flag6", 1111, "flag6Desc") // Default value to '1111' for testing.  (JSON config set to '6')
+	flag.StringVar(&fc.Flag4, "flag4", "flagDefault4", "flag4Desc")
+	flag.StringVar(&fc.Flag5, "flag5", "flagDefault5", "flag5Desc")
 
-	flag.StringVar(&fc.Flag7, "flag7", "flagDefaultFlag7", "Flag7's value comes from environmental variable.")
-	flag.StringVar(&fc.Flag8, "flag8", "flagDefaultFlag8", "Flag8 tests environmental expansion from JSON config.")
+	//Env Vars
+	flag.StringVar(&fc.Flag6, "flag6", "flagDefault6", "Flag6's value comes from environmental variable.")
+	flag.StringVar(&fc.Flag7, "flag7", "flagDefault7", "Flag7 tests environmental expansion for JSON config.")
+	flag.StringVar(&fc.Flag8, "flag8", "$FLAG8ENVEXPANSION", "Flag8 tests environmental expansion for default flag value.")
 
-	flag.StringVar(&fc.Flag9, "flag9", "$FLAG9", "Flag9's value comes from expanding the default flag value ($FLAG) with a variable to an environmental variable.")
+	//flag.StringVar(&fc.Flag8, "flag8", "$FLAG8", "Flag8's value comes from expanding the default flag value ($FLAG) with a variable to an environmental variable.")
+
+	//flag.IntVar(&fc.Flag6, "flag6", 1111, "flag6Desc") // Default value to '1111' for testing.  (JSON config set to '6')
 	Parse(&fc)
 }
 
 // Example prints out values
 // go test -run Example_goFlagConfig --config=test_config.json5
-// JSONFLAG_FLAG10=FLAG10EnvValue FLAG7=FLAG7EnvValue FLAG8ENVEXPANSION=Flag8EnvExpansionValue FLAG9=Flag9EnvValue go test -run Example_goFlagConfig --flag1=cliFlag1 --config=test_config.json5
+//
+//	FLAG6=Flag6EnvValue FLAG7ENVEXPANSION=Flag7EnvExpansionValue  FLAG8ENVEXPANSION=Flag8EnvExpansionValue go test -run Example_goFlagConfig --flag1=cliFlag1 --config=test_config.json5
+//	Deprecated: JSONFLAG_FLAG10=FLAG10EnvValue
 func Example_goFlagConfig() {
 	//exampleInitGoFlagConfig() is called by TestMain since it uses the flag
 	//package cannot be called inside of an example since flags must be
@@ -58,7 +66,7 @@ func Example_goFlagConfig() {
 	//idiomatic pattern.
 
 	fmt.Println(fc)
-	// Output: {cliFlag1 jsonFlag2 3 defaultFlag4 jsonFlag5 6 FLAG7EnvValue Flag8EnvExpansionValue F9EnvValue}
+	// Output: {cliFlag1 jsonFlag2 3 flagDefault4 jsonFlag5 Flag6EnvValue Flag7EnvExpansionValue Flag8EnvExpansionValue}
 }
 
 var envPreConfig EnvPrefixConfig

@@ -4,9 +4,10 @@
 		"flag3": 3,
 		// flag4 is set by flag default only.
     "flag5": "jsonFlag5",
-		"flagsix": 6,
-		"flag7": "jsonFlag7",
-		"flag8":"$FLAG8ENVEXPANSION", 
+
+		"flag7":"$FLAG7ENVEXPANSION", 
+
+		// 		"flagsix": 6,
 		
 		
 	// This package is cool with trailing commas and comments in JSON.  
