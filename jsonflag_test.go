@@ -3,56 +3,68 @@ package jsonflag
 import (
 	"os"
 	"testing"
+	"time"
 )
 
 // See the package documentation on how to run a test.
 func TestMain(m *testing.M) {
 	exampleInitGoFlagConfig() // Must be called in TestMain for CLI to see flags.
-	// Example_goFlagConfig() // Run "Go flag design pattern" example.
-	// tags()           // Run "tag config design pattern" example.
-	//envVarPrefix()   // Run example using environmental variable prefix, useful for "namespacing" config settings to your specific application.
-	os.Exit(m.Run()) // Must explicitly exit because of flag test
+	os.Exit(m.Run())          // Must explicitly exit because of flag test
 }
 
-// // TestVerifyTagFlags
-// // test with:
-// // ENABLED=false MAX_RETRIES=5 go test -run TestVerifyTagFlags --username=cliName --config=test_tags.json5
-// func TestVerifyTagFlags(t *testing.T) {
-// 	var tagConfig TagConfig
+// TagConfig is for testing "tag design pattern" flags
+// Config's values must be exported for package `flag` to be able to set values.
+type TagConfig struct {
+	UserName   string        `flag:"username" default:"defaultUserName" desc:"User name"`
+	Count      int           `flag:"count" default:"10" desc:"Item count"`
+	Enabled    bool          `flag:"enabled" default:"true" desc:"Feature toggle"`
+	Timeout    time.Duration `flag:"timeout" default:"5s" desc:"Operation timeout"`
+	Threshold  float64       `flag:"threshold" default:"0.75" desc:"Threshold value"`
+	MaxRetries uint          `flag:"max-retries" default:"3" desc:"Max retry attempts"`
+}
 
-// 	// Temporarily override Path to use tag-specific config (tests may be ran out of order)
-// 	origPath := Path
-// 	Path = "test_tags.json5"
-// 	defer func() { Path = origPath }()
-
-// 	// Parse flags
-// 	Parse(&tagConfig)
-
-// 	fmt.Println(tagConfig)
-
-// 	func tags() {
-// 		Parse(&tc) // TagConfig
-// 		fmt.Println(tc)
-// 		// Output: {defaultUserName 10 true 5s 0.75 3}
-// 	}
-
-// 	// Verify values
-// 	if tagConfig.UserName != tagGolden.UserName {
-// 		mismatchError("UserName", tagGolden.UserName, tagConfig.UserName, t)
-// 	}
-// 	if tagConfig.Count != tagGolden.Count {
-// 		mismatchError("Count", fmt.Sprintf("%v", tagGolden.Count), fmt.Sprintf("%v", tagConfig.Count), t)
-// 	}
-// 	if tagConfig.Enabled != tagGolden.Enabled {
-// 		mismatchError("Enabled", fmt.Sprintf("%v", tagGolden.Enabled), fmt.Sprintf("%v", tagConfig.Enabled), t)
-// 	}
-// 	if tagConfig.Timeout != tagGolden.Timeout {
-// 		mismatchError("Timeout", fmt.Sprintf("%v", tagGolden.Timeout), fmt.Sprintf("%v", tagConfig.Timeout), t)
-// 	}
-// 	if tagConfig.Threshold != tagGolden.Threshold {
-// 		mismatchError("Threshold", fmt.Sprintf("%v", tagGolden.Threshold), fmt.Sprintf("%v", tagConfig.Threshold), t)
-// 	}
-// 	if tagConfig.MaxRetries != tagGolden.MaxRetries {
-// 		mismatchError("MaxRetries", fmt.Sprintf("%v", tagGolden.MaxRetries), fmt.Sprintf("%v", tagConfig.MaxRetries), t)
-// 	}
+// // Golden test values for tag-based test.
+// var tagGolden = TagConfig{
+// 	UserName:   "cliName",        // CLI override
+// 	Count:      20,               // JSON value
+// 	Enabled:    false,            // Env override
+// 	Timeout:    10 * time.Second, // JSON value
+// 	Threshold:  0.75,             // Default value
+// 	MaxRetries: 5,                // Env override
 // }
+
+func TestTagConfig(t *testing.T) {
+	os.Setenv("ENABLED", "false")
+	os.Setenv("MAX_RETRIES", "5")
+	defer os.Unsetenv("ENABLED")
+	defer os.Unsetenv("MAX_RETRIES")
+
+	var tc TagConfig
+
+	// Use a test-specific config file
+	origPath := Path
+	Path = "test_tags.json5" // should contain: {"count": 20, "timeout": "10s"}
+	defer func() { Path = origPath }()
+
+	Parse(&tc)
+
+	// Now assert values:
+	if tc.UserName != "cliName" { // assuming run with --username=cliName
+		t.Errorf("expected cliName, got %s", tc.UserName)
+	}
+	if tc.Count != 20 {
+		t.Errorf("expected 20, got %d", tc.Count)
+	}
+	if tc.Enabled != false {
+		t.Errorf("expected false, got %v", tc.Enabled)
+	}
+	if tc.Timeout != 10*time.Second {
+		t.Errorf("expected 10s, got %v", tc.Timeout)
+	}
+	if tc.Threshold != 0.75 {
+		t.Errorf("expected 0.75, got %f", tc.Threshold)
+	}
+	if tc.MaxRetries != 5 {
+		t.Errorf("expected 5, got %d", tc.MaxRetries)
+	}
+}

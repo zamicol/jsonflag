@@ -104,14 +104,20 @@ var Path string
 var EnvPrefix = ""
 
 func init() {
+	// Set default config path to `config.json5`.  Overridable via cli `--config`.
 	flag.StringVar(&Path, "config", "config.json5", "Path to json config file.")
 }
 
 // Parse reads the config file and parses CLI flags into c with a single flag.Parse() call.
+//  1. Parsing --config from command line (if present).
+//  2. Loading and decoding JSON config.
+//  3. Registering any missing flags from struct tags.
+//  4. Applying environment variables.
+//  5. Finally parsing CLI flags (highest precedence).
 func Parse(c interface{}) {
 	// Manually extract --config or -config from os.Args instead of calling
-	// flag.Parse twice. By avoiding calling flag.Parse() twice help works as
-	// expected.
+	// flag.Parse twice. By avoiding calling it twice, flag.Parse()'s `--help` works as
+	// expected.  Without this, `--help` will not work
 	for i := 1; i < len(os.Args); i++ { // Start at 1 to skip program name.
 		arg := os.Args[i]
 		if arg == "--config" || arg == "-config" {
@@ -128,21 +134,14 @@ func Parse(c interface{}) {
 		}
 	}
 
-	// Parse the JSON config first, using the determined Path.
-	parseJSON(Path, c)
-
-	// Register flags from struct tags if not already defined
-	registerTagFlags(c)
-
-	// Set environmental variables on all flags.
-	flag.VisitAll(env)
-
-	// Single call to parse CLI flags, overriding JSON/env values as needed.
-	flag.Parse()
+	parseJSON(Path, c)              // Parse JSON config.
+	registerTagFlags(c)             // Register struct tags
+	flag.VisitAll(applyEnvOverride) // Apply environment variables to all defined flags
+	flag.Parse()                    // Finally parse CLI flags, override everything else
 }
 
-// env sets environmental values on all flags based on flag name.
-func env(f *flag.Flag) {
+// applyEnvOverride sets value from environment if present.
+func applyEnvOverride(f *flag.Flag) {
 	v := os.Getenv(EnvPrefix + strings.ToUpper(f.Name))
 	if v != "" {
 		flag.Set(f.Name, v)
@@ -218,7 +217,9 @@ func registerTagFlags(c interface{}) {
 		}
 
 		// Only register flags for fields with explicit tags
-		hasTag := field.Tag.Get("flag") != "" || field.Tag.Get("default") != "" || field.Tag.Get("desc") != ""
+		hasTag := field.Tag.Get("flag") != "" ||
+			field.Tag.Get("default") != "" ||
+			field.Tag.Get("desc") != ""
 		if !hasTag {
 			continue
 		}

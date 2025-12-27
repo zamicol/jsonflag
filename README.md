@@ -6,7 +6,8 @@
 
 jsonflag is a drop in replacement and extension of Go's flag package that
 seamlessly adds support for configs (JSON/JSON5), environmental variables,
-struct tag defaults, and CLI options.  This allows configs to be more declarative and less imparitive than the Go flag library.
+struct tag defaults, and CLI options.  Struct tag defaults and JSON configs
+allows configs to be declarative instead of imperative like the Go flag library.
 
 Values set by a higher precedence overwrite values set by a lower precedence,
 **CLI > Env > JSON > JSON config tag default > Flag Default**, making testing
@@ -16,20 +17,31 @@ using Env variables, CLI, JSON tags, JSON configs, for CLI flags easy.
  1. Command line flags         (CLI example: `--flag1=Flag1Value`)
  2. Environmental variables    (Env example: FLAG2=Flag2value)
  3. JSON config values         (JSON example: `{"flag3": "Flag3Value"}`)
- 4. JSON config tag default    (JSON Config struct example: `Flag6 int    `json:"9999"``)
- 5. Default values set using go flag initialization (Go example: `flag.StringVar(&config.Flag4,
-    "Flag4Name", "Flag4DefaultValue", "Flag4Description")`)
+ 4. Struct tag default         (JSON struct example: config{Flag1 int    `json:"9999"`)
+ 5. Go flag default            (Go example: `flag.StringVar(&config.Flag5, "Flag5Name", "Flag5DefaultValue", "Flag5Description")`)
 
 To overwrite a value, a CLI parameter may be set `go run main.go
---flag1=flag1CliValue`.  
-
-Environmental variables may also be set via CLI, for example:
-`FLAG1=Flag1EnvValue go run main.go`, but they are lower priority than CLI
-flags.
+--flag1=flag1CliValue`.  Environmental variables may also be set via CLI, for
+example: `FLAG1=Flag1EnvValue go run main.go`, but they are lower priority than
+CLI flags.
 
 jsonflag also supports:
 - **Default values** in tags
 - **Environmental variable expansion**  where if FLAG1=EnvFlagValue, and anywhere the value is $FLAG1, $FLAG1 will be expanded to EnvFlagValue. It does not matter where the variable is set, and `$` character is the signifier for a variable. `$
+
+## Installation
+
+Go get
+
+```bash
+go get github.com/zamicol/jsonflag
+```
+and import:
+
+```go
+import "github.com/zamicol/jsonflag"
+```
+
 
 
 ## Config Path
@@ -54,21 +66,6 @@ func main(){
 	jsonflag.Parse(&config)
 }
 ```
-
-
-## Installation
-
-Go get
-
-```bash
-go get github.com/zamicol/jsonflag
-```
-and import:
-
-```go
-import "github.com/zamicol/jsonflag"
-```
-
 
 
 ## Quick Example

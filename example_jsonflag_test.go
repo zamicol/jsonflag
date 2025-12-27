@@ -48,7 +48,7 @@ func exampleInitGoFlagConfig() {
 
 	//flag.StringVar(&fc.Flag8, "flag8", "$FLAG8", "Flag8's value comes from expanding the default flag value ($FLAG) with a variable to an environmental variable.")
 
-	//flag.IntVar(&fc.Flag6, "flag6", 1111, "flag6Desc") // Default value to '1111' for testing.  (JSON config set to '6')
+	//flag.IntVar(&fc.Flag6, "flag6", 1111, "flag6Desc") // Default value to '1111' for testing.  (JSON config set to '6') // TODO seems to be a bug with int JSON
 	Parse(&fc)
 }
 
@@ -56,7 +56,6 @@ func exampleInitGoFlagConfig() {
 // go test -run Example_goFlagConfig --config=test_config.json5
 //
 //	FLAG6=Flag6EnvValue FLAG7ENVEXPANSION=Flag7EnvExpansionValue  FLAG8ENVEXPANSION=Flag8EnvExpansionValue go test -run Example_goFlagConfig --flag1=cliFlag1 --config=test_config.json5
-//	Deprecated: JSONFLAG_FLAG10=FLAG10EnvValue
 func Example_goFlagConfig() {
 	//exampleInitGoFlagConfig() is called by TestMain since it uses the flag
 	//package cannot be called inside of an example since flags must be
