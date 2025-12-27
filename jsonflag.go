@@ -140,11 +140,17 @@ func Parse(c interface{}) {
 	flag.Parse()                    // Finally parse CLI flags, override everything else
 }
 
-// applyEnvOverride sets value from environment if present.
+// applyEnvOverride applies environment variables to defined flags. (Example,
+// value `$TestEnv` is replaced to `TestValue` if set by an env variable:
+// `TESTENV=TestValue`. EnvVars have higher precedence than JSON config but lower than
+// CLI flags.
 func applyEnvOverride(f *flag.Flag) {
-	v := os.Getenv(EnvPrefix + strings.ToUpper(f.Name))
-	if v != "" {
-		flag.Set(f.Name, v)
+	envName := EnvPrefix + strings.ToUpper(f.Name)
+	value := os.Getenv(envName)
+	if value != "" {
+		if err := flag.Set(f.Name, value); err != nil {
+			panic(fmt.Errorf("jsonflag: failed to set flag --%s from env %s=%q: %w", f.Name, envName, value, err))
+		}
 	}
 }
 
@@ -176,9 +182,43 @@ func parseJSON(configPath string, c interface{}) {
 		panic(err) // Fail fast matching flag.Parse() error reporting.
 	}
 
-	// Expand env variables in the config struct.
-	v := reflect.ValueOf(c)
-	expand(v)
+	// expandEnvInStruct env variables in the config struct.
+	expandEnvInStruct(reflect.ValueOf(c))
+}
+
+// expandEnvInStruct recursively expands `$VAR` style environment variables
+// if the underlying type is string (including nested structs, pointers, etc.).
+// (Expansion example, on a system where `USER` is set to `user`, `$USER` will
+// become 'user')
+func expandEnvInStruct(v reflect.Value) {
+	switch v.Kind() {
+	case reflect.Ptr:
+		if v.IsNil() {
+			return
+		}
+		expandEnvInStruct(v.Elem())
+
+	case reflect.Struct:
+		for i := 0; i < v.NumField(); i++ {
+			expandEnvInStruct(v.Field(i))
+		}
+
+	case reflect.Slice:
+		for i := 0; i < v.Len(); i++ {
+			expandEnvInStruct(v.Index(i))
+		}
+
+	case reflect.Map:
+		for _, key := range v.MapKeys() {
+			expandEnvInStruct(v.MapIndex(key))
+		}
+
+	case reflect.String:
+		if v.CanSet() {
+			expanded := os.ExpandEnv(v.String())
+			v.SetString(expanded)
+		}
+	}
 }
 
 // registerTagFlags registers flags based on struct tags if not already defined.
@@ -302,39 +342,5 @@ func registerTagFlags(c interface{}) {
 			}
 			flag.BoolVar(fv.Addr().Interface().(*bool), flagName, def, desc)
 		}
-	}
-}
-
-// Expand recursively expands from interface{} any structs, slices, pointers,
-// and maps looking for variables with the underlying type of string. If the
-// underlying type is string, it will attempt to expand any environmental
-// variable.
-//
-// For an environmental variable expansion example, on a system where $USER is
-// set to user, $USER will become 'user'
-func expand(v reflect.Value) {
-	switch v.Kind() {
-	case reflect.Ptr:
-		vv := v.Elem()     // Get value pointer is pointing to.
-		if !vv.IsValid() { // For nil pointers
-			return
-		}
-		expand(vv)
-	case reflect.Struct:
-		for i := 0; i < v.NumField(); i++ {
-			expand(v.Field(i))
-		}
-	case reflect.Slice:
-		for i := 0; i < v.Len(); i++ {
-			expand(v.Index(i))
-		}
-	case reflect.Map:
-		for _, key := range v.MapKeys() {
-			expand(v.MapIndex(key))
-		}
-	case reflect.String:
-		str := v.String()
-		str = os.ExpandEnv(str)
-		v.SetString(str)
 	}
 }
