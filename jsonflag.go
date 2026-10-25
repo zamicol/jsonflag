@@ -103,16 +103,12 @@ import (
 var Path string
 
 // EnvPrefix will be prepended to flag names if set. For example, with a prefix
-<<<<<<< HEAD
-// of "MYAPP_", the flag "flag1" will become "MYAPP_FLAG1".
+// of "MYAPP_", the flag "flag1" will become "MYAPP_FLAG1" and the flag
+// "log-level" will become "MYAPP_LOG_LEVEL". The prefix is not rewritten.
 //
 // Prefixes are useful for namespacing configurations, ensuring any potential
 // name collisions with existing environmental variables are explicitly
 // precluded.
-=======
-// of "MYAPP_", the flag "flag1" will become "MYAPP_FLAG1" and the flag
-// "log-level" will become "MYAPP_LOG_LEVEL". The prefix is not rewritten.
->>>>>>> 2400269901c18dc0a6b023846065bab22cd9ba68
 var EnvPrefix = ""
 
 func init() {
@@ -152,32 +148,29 @@ func Parse(c interface{}) {
 	flag.Parse()                    // Finally parse CLI flags, override everything else
 }
 
-<<<<<<< HEAD
 // applyEnvOverride applies environment variables to defined flags. (Example,
 // value `$TestEnv` is replaced to `TestValue` if set by an env variable:
 // `TESTENV=TestValue`. EnvVars have higher precedence than JSON config but lower than
 // CLI flags.
+//
+// The value is read with envValue. The preferred variable is EnvPrefix plus a
+// shell-safe form of the flag name: uppercased, with every character other than
+// an ASCII letter, digit, or underscore replaced by '_'. "log-level" uses
+// LOG_LEVEL, or MYAPP_LOG_LEVEL when EnvPrefix is "MYAPP_". When that name
+// differs from the legacy exact-uppercase form ("LOG-LEVEL") and the preferred
+// variable is unset or empty, the legacy name is used. flag.Set failures panic.
 func applyEnvOverride(f *flag.Flag) {
-	envName := EnvPrefix + strings.ToUpper(f.Name)
-	value := os.Getenv(envName)
+	envName := EnvPrefix + envKey(f.Name)
+	value := envValue(f.Name)
 	if value != "" {
+		// Report the variable that supplied the value. envValue prefers the
+		// shell-safe name and falls back to the historical exact-uppercase name.
+		if os.Getenv(envName) == "" {
+			envName = EnvPrefix + strings.ToUpper(f.Name)
+		}
 		if err := flag.Set(f.Name, value); err != nil {
 			panic(fmt.Errorf("jsonflag: failed to set flag --%s from env %s=%q: %w", f.Name, envName, value, err))
 		}
-=======
-// env sets environmental values on all flags based on flag name.
-//
-// The preferred variable is EnvPrefix plus a shell-safe form of the flag name:
-// uppercased, with every character other than an ASCII letter, digit, or
-// underscore replaced by '_'. "log-level" uses LOG_LEVEL, or MYAPP_LOG_LEVEL
-// when EnvPrefix is "MYAPP_". When that name differs from the legacy
-// exact-uppercase form ("LOG-LEVEL") and the preferred variable is unset or
-// empty, the legacy name is used.
-func env(f *flag.Flag) {
-	v := envValue(f.Name)
-	if v != "" {
-		flag.Set(f.Name, v)
->>>>>>> 2400269901c18dc0a6b023846065bab22cd9ba68
 	}
 }
 

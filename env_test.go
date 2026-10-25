@@ -69,7 +69,7 @@ func TestEnvSetsNormalizedNames(t *testing.T) {
 			// so a fallback would fail this case.
 			mutateEnv(t, map[string]string{tt.key: tt.value}, []string{tt.legacy})
 
-			env(flag.Lookup(tt.flagName))
+			applyEnvOverride(flag.Lookup(tt.flagName))
 			if got := flag.Lookup(tt.flagName).Value.String(); got != tt.value {
 				t.Fatalf("flag %q = %q, want %q (from %s)", tt.flagName, got, tt.value, tt.key)
 			}
@@ -146,7 +146,7 @@ func TestEnvLegacyFallback(t *testing.T) {
 			if got := envValue(tt.flagName); got != tt.want {
 				t.Fatalf("envValue(%q) = %q, want %q", tt.flagName, got, tt.want)
 			}
-			env(flag.Lookup(tt.flagName))
+			applyEnvOverride(flag.Lookup(tt.flagName))
 			if got := flag.Lookup(tt.flagName).Value.String(); got != tt.want {
 				t.Fatalf("flag %q = %q, want %q", tt.flagName, got, tt.want)
 			}
@@ -175,7 +175,7 @@ func TestEnvPlainNamesStayExact(t *testing.T) {
 		setEnvPrefix(t, "my-app_")
 		restoreFlag(t, "db.host")
 		mutateEnv(t, map[string]string{"my-app_DB_HOST": "prefixed"}, []string{"my-app_DB.HOST", "MY_APP_DB_HOST"})
-		env(flag.Lookup("db.host"))
+		applyEnvOverride(flag.Lookup("db.host"))
 		if got := flag.Lookup("db.host").Value.String(); got != "prefixed" {
 			t.Fatalf("flag db.host = %q, want prefixed", got)
 		}
@@ -189,7 +189,7 @@ func TestEnvLeavesFlagWhenUnset(t *testing.T) {
 	if err := flag.Set("log-level", "keep-me"); err != nil {
 		t.Fatal(err)
 	}
-	env(flag.Lookup("log-level"))
+	applyEnvOverride(flag.Lookup("log-level"))
 	if got := flag.Lookup("log-level").Value.String(); got != "keep-me" {
 		t.Fatalf("flag log-level = %q, want keep-me", got)
 	}

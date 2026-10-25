@@ -144,7 +144,11 @@ For environmental variables, the flag’s name is converted to all uppercase,
 meaning environmental flag names (not values) are case insensitive. Characters
 other than ASCII letters, digits, and underscores are replaced with underscores,
 which makes dashed and dotted flag names settable in a shell. For example,
-`log-level` or `log.level` is read from `LOG_LEVEL`.
+`log-level` or `log.level` is read from `LOG_LEVEL`. `EnvPrefix`, when set, is
+prepended unchanged (`MYAPP_` + `log-level` is `MYAPP_LOG_LEVEL`). When the
+normalized name differs from the historical exact-uppercase spelling
+(`LOG-LEVEL`), that historical name is used if the normalized variable is unset
+or empty.
 
 **Go JSON naming** For JSON names, this package uses Go’s json package for
 decoding. The JSON decoder only has access to exported fields of structs and
