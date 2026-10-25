@@ -5,48 +5,90 @@ import (
 	"fmt"
 )
 
-// Create two new configs.  Typical usage uses only one config.
-var tc Config
-var tc2 Config2
-
-// Config's values must be exported
-type Config struct {
+// goFlagConfig is for testing "Go flag" design pattern.
+//
+// Although mixing patterns is supported, idiomatic Go code should use only one
+// config design pattern: either the standard library's flag package, the "Go
+// flag" design pattern, or the "tag config" design pattern.
+//
+// The Go flag design pattern provides drop in compatibility with Go's libraries
+// while the the "tag config" design pattern avoids stuttering.
+//
+// Config's values must be exported for package `flag` to be able to set values.
+type goFlagConfig struct {
 	Flag1 string // Set by flag default, JSON, and CLI - CLI precedence
-	Flag2 string // Set by JSON only - JSON precedence
-	Flag3 string // Set by flag default only - default precedence
-	Flag4 string // Set by JSON and flag default - JSON precedence
-	Flag5 int    // Set by JSON only int - JSON precedence
-	Flag6 int    `json:"flagsix"` // JSON with flag default int - JSON precedence.  Also tests tags.
-	Flag7 string // Set by environmental variable and JSON.  No default, or CLI. - Env precedence
-	Flag8 string // Set by environmental value expansion from value in JSON config.
-	Flag9 string // Test expanding the default flag value ($FLAG7) with a variable to an environmental variable."
+	Flag2 string // Set by JSON (string) only     - JSON precedence
+	Flag3 int    // Set by JSON (int)    only     - JSON precedence
+	Flag4 string // Set by flag default only      - Flag default precedence
+	Flag5 string // Set by JSON and flag default  - JSON precedence
+
+	// Environment Variables (EnvVars) and environmental variable expansion
+	Flag6 string // Set by environmental variable, flag default, and JSON. No CLI, no expansion. - Env precedence
+	Flag7 string // Set by environmental value expansion, flag default, and JSON (pre-expansion).  No pure environmental value or CLI. - JSON precedence then unexpanded.
+	Flag8 string // Test expanding the flag default value ($FlagDefault8) with a value from an environmental variable. No JSON or CLI.  Expansion variable set in ENV and pre-expansion value set in JSON config.
+
+	//Flag6 int    `json:"9999"` // Tests JSON tag. JSON with flag default int and JSON tag - (Three places are set: flag default, json tag, and JSON) - JSON precedence.
 }
 
-type Config2 struct {
-	Flag10 string // Test EnvPrefix.  Value is set by CLI only.
-}
+// fc is the global for Go Flag examples.
+var fc goFlagConfig
 
-// flags holds all flag definitions for CLI and application set.
-// Flag 2 and 5 are missing to test JSON values which will still populate.
-func flags() {
-	flag.StringVar(&tc.Flag1, "flag1", "defaultFlag1", "flag1Desc")
-	flag.StringVar(&tc.Flag3, "flag3", "defaultFlag3", "flag3Desc")
-	flag.StringVar(&tc.Flag4, "flag4", "defaultFlag4", "flag4Desc")
-	flag.IntVar(&tc.Flag6, "flag6", 1, "flag6Desc") // Set default value to something other than 6 for testing.
-	flag.StringVar(&tc.Flag7, "flag7", "defaultFlag7", "Flag7's value comes from environmental variable.")
-	flag.StringVar(&tc.Flag8, "flag8", "defaultFlag8", "Flag8 tests environmental expansion.")
-	flag.StringVar(&tc.Flag9, "flag9", "$FLAG7", "Flag9's value comes from expanding the default flag value ($FLAG7) with a variable to an environmental variable.")
-	Parse(&tc)
+// exampleInitFlags is an example of using jsonflag as a drop-in replacement for Go's flag.  Do not run in testing since it is not exported.
+// how an application can initialize flag definitions using the "Go flag" design pattern.
+func exampleInitGoFlagConfig() {
+	flag.StringVar(&fc.Flag1, "flag1", "flagDefault1", "flag1Desc") // Basic CLI flag
+	// Flag 2 and 3 are missing here in order to test values that populate only from the JSON config.
+	flag.StringVar(&fc.Flag4, "flag4", "flagDefault4", "flag4Desc")
+	flag.StringVar(&fc.Flag5, "flag5", "flagDefault5", "flag5Desc")
 
-	EnvPrefix = "JSONFLAG_"
-	flag.StringVar(&tc2.Flag10, "flag10", "", "Flag10 tests prefixing the EnvPrefix to env vars")
-	Parse(&tc2)
+	//Env Vars
+	flag.StringVar(&fc.Flag6, "flag6", "flagDefault6", "Flag6's value comes from environmental variable.")
+	flag.StringVar(&fc.Flag7, "flag7", "flagDefault7", "Flag7 tests environmental expansion for JSON config.")
+	flag.StringVar(&fc.Flag8, "flag8", "$FLAG8ENVEXPANSION", "Flag8 tests environmental expansion for default flag value.")
+
+	//flag.StringVar(&fc.Flag8, "flag8", "$FLAG8", "Flag8's value comes from expanding the default flag value ($FLAG) with a variable to an environmental variable.")
+
+	//flag.IntVar(&fc.Flag6, "flag6", 1111, "flag6Desc") // Default value to '1111' for testing.  (JSON config set to '6') // TODO seems to be a bug with int JSON
+	Parse(&fc)
 }
 
 // Example prints out values
-func Example() {
-	fmt.Println(tc)
-	fmt.Println(tc2)
-	// Output: {cliFlag1 jsonFlag2 defaultFlag3 jsonFlag4 5 6 FLAG7VALUE Flag8Env FLAG7VALUE}
-	// {FLAG10VALUE}
+// go test -run Example_goFlagConfig --config=test_config.json5
+//
+//	FLAG6=Flag6EnvValue FLAG7ENVEXPANSION=Flag7EnvExpansionValue  FLAG8ENVEXPANSION=Flag8EnvExpansionValue go test -run Example_goFlagConfig --flag1=cliFlag1 --config=test_config.json5
+func Example_goFlagConfig() {
+	//exampleInitGoFlagConfig() is called by TestMain since it uses the flag
+	//package cannot be called inside of an example since flags must be
+	//registered before by the binary.  This breaks the typical, idiomatic go
+	//testing pattern, but this is the only way that this is possible since Go
+	//flag's package does not export the variables that would be needed for the
+	//idiomatic pattern.
+
+	fmt.Println(fc)
+	// Output: {cliFlag1 jsonFlag2 3 flagDefault4 jsonFlag5 Flag6EnvValue Flag7EnvExpansionValue Flag8EnvExpansionValue}
+}
+
+var envPreConfig EnvPrefixConfig
+
+// EnvPrefixConfig is for testing environmental prefix which is useful for
+// namespacing an application's configuration options on a system wide level.
+type EnvPrefixConfig struct {
+	Flag10 string // Test EnvPrefix.  Value is set by CLI only and is prefixed by an environmental prefix.
+}
+
+// ExampleEnvPrefix is an example using Environmental variable prefix.
+//
+// Prefixes are useful for namespacing configurations, ensuring any potential
+// name collisions with existing environmental variables are explicitly
+// precluded.
+//
+// Test with:
+// JSONFLAG_FLAG10=FLAG10VALUE go test -run ExampleEnvPrefix --config=test_config.json5
+func ExampleEnvPrefix() {
+	fmt.Println("ExampleEnvPrefix")
+	EnvPrefix = "JSONFLAG_"
+	flag.StringVar(&envPreConfig.Flag10, "flag10", "defaultValue", "Flag10 tests prefixing the EnvPrefix to env vars")
+	Parse(&envPreConfig)
+	fmt.Println(envPreConfig)
+	// // Output: {FLAG10VALUE}
 }

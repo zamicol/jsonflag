@@ -3,74 +3,68 @@ package jsonflag
 import (
 	"os"
 	"testing"
+	"time"
 )
 
 // See the package documentation on how to run a test.
-
 func TestMain(m *testing.M) {
-	flags()          // Run example.
-	os.Exit(m.Run()) // Must explicitly exit because of flag test
+	exampleInitGoFlagConfig() // Must be called in TestMain for CLI to see flags.
+	os.Exit(m.Run())          // Must explicitly exit because of flag test
 }
 
-// Golden test values.
-var golden = Config{
-	Flag1: "cliFlag1",
-	Flag2: "jsonFlag2",
-	Flag3: "defaultFlag3",
-	Flag4: "jsonFlag4",
-	Flag5: 5,
-	Flag6: 6,
-	Flag7: "FLAG7VALUE",
-	Flag8: "Flag8Env",
-	Flag9: "FLAG7VALUE",
+// TagConfig is for testing "tag design pattern" flags
+// Config's values must be exported for package `flag` to be able to set values.
+type TagConfig struct {
+	UserName   string        `flag:"username" default:"defaultUserName" desc:"User name"`
+	Count      int           `flag:"count" default:"10" desc:"Item count"`
+	Enabled    bool          `flag:"enabled" default:"true" desc:"Feature toggle"`
+	Timeout    time.Duration `flag:"timeout" default:"5s" desc:"Operation timeout"`
+	Threshold  float64       `flag:"threshold" default:"0.75" desc:"Threshold value"`
+	MaxRetries uint          `flag:"max-retries" default:"3" desc:"Max retry attempts"`
 }
 
-var golden2 = Config2{
-	Flag10: "FLAG10VALUE",
-}
+// // Golden test values for tag-based test.
+// var tagGolden = TagConfig{
+// 	UserName:   "cliName",        // CLI override
+// 	Count:      20,               // JSON value
+// 	Enabled:    false,            // Env override
+// 	Timeout:    10 * time.Second, // JSON value
+// 	Threshold:  0.75,             // Default value
+// 	MaxRetries: 5,                // Env override
+// }
 
-// TestVerifyCorrectFlags
-// test with `JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 --config=test_config.json5`
-func TestVerifyCorrectFlags(t *testing.T) {
-	if tc.Flag1 != golden.Flag1 {
-		mismatchError("Flag1", golden.Flag1, tc.Flag1, t)
-	}
-	if tc.Flag2 != golden.Flag2 {
-		mismatchError("Flag2", golden.Flag2, tc.Flag2, t)
-	}
-	if tc.Flag3 != golden.Flag3 {
-		mismatchError("Flag3", golden.Flag3, tc.Flag3, t)
-	}
-	if tc.Flag4 != golden.Flag4 {
-		mismatchError("Flag4", golden.Flag4, tc.Flag4, t)
-	}
-	if tc.Flag5 != golden.Flag5 {
-		mismatchErrori("Flag5", golden.Flag5, tc.Flag5, t)
-	}
-	if tc.Flag6 != golden.Flag6 {
-		mismatchErrori("Flag6", golden.Flag6, tc.Flag6, t)
-	}
-	if tc.Flag7 != golden.Flag7 {
-		mismatchError("Flag7", golden.Flag7, tc.Flag7, t)
-	}
-	if tc.Flag8 != golden.Flag8 {
-		mismatchError("Flag8", golden.Flag8, tc.Flag8, t)
-	}
-	if tc.Flag9 != golden.Flag9 {
-		mismatchError("Flag9", golden.Flag9, tc.Flag9, t)
-	}
+func TestTagConfig(t *testing.T) {
+	os.Setenv("ENABLED", "false")
+	os.Setenv("MAX_RETRIES", "5")
+	defer os.Unsetenv("ENABLED")
+	defer os.Unsetenv("MAX_RETRIES")
 
-	// Second struct
-	if tc2.Flag10 != golden2.Flag10 {
-		mismatchError("Flag10", golden2.Flag10, tc2.Flag10, t)
+	var tc TagConfig
+
+	// Use a test-specific config file
+	origPath := Path
+	Path = "test_tags.json5" // should contain: {"count": 20, "timeout": "10s"}
+	defer func() { Path = origPath }()
+
+	Parse(&tc)
+
+	// Now assert values:
+	if tc.UserName != "cliName" { // assuming run with --username=cliName
+		t.Errorf("expected cliName, got %s", tc.UserName)
 	}
-
-}
-
-func mismatchError(what string, expected string, got string, t *testing.T) {
-	t.Error(what+" set incorrectly. Expected", expected, "Got", got)
-}
-
-func mismatchErrori(what string, expected int, got int, t *testing.T) {
-	t.Error(what+" set incorrectly. Expected", expected, "Got", got)
+	if tc.Count != 20 {
+		t.Errorf("expected 20, got %d", tc.Count)
+	}
+	if tc.Enabled != false {
+		t.Errorf("expected false, got %v", tc.Enabled)
+	}
+	if tc.Timeout != 10*time.Second {
+		t.Errorf("expected 10s, got %v", tc.Timeout)
+	}
+	if tc.Threshold != 0.75 {
+		t.Errorf("expected 0.75, got %f", tc.Threshold)
+	}
+	if tc.MaxRetries != 5 {
+		t.Errorf("expected 5, got %d", tc.MaxRetries)
+	}
 }

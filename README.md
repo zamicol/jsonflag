@@ -4,27 +4,45 @@
 [![GoDoc](https://godoc.org/github.com/zamicol/jsonflag?status.svg)](https://godoc.org/github.com/zamicol/jsonflag)
 
 
-jsonflag is an almost drop in replacement for Go's flag package that seamlessly
-adds support for configs (JSON/JSON5), environmental variables, and CLI options.
+jsonflag is a drop in replacement and extension of Go's flag package that
+seamlessly adds support for configs (JSON/JSON5), environmental variables,
+struct tag defaults, and CLI options.  Struct tag defaults and JSON configs
+allows configs to be declarative instead of imperative like the Go flag library.
 
 Values set by a higher precedence overwrite values set by a lower precedence,
-**CLI > Env > JSON > Defaults**. This makes testing using CLI or Env variables
-easy.
+**CLI > Env > JSON > JSON config tag default > Flag Default**, making testing
+using Env variables, CLI, JSON tags, JSON configs, for CLI flags easy.
 
-Order of precedence:
-
+**Order of precedence**:
  1. Command line flags         (CLI example: `--flag1=Flag1Value`)
  2. Environmental variables    (Env example: FLAG2=Flag2value)
  3. JSON config values         (JSON example: `{"flag3": "Flag3Value"}`)
- 4. Default values set on flag (Go example: `flag.StringVar(&config.Flag4,
-    "Flag4Name", "Flag4DefaultValue", "Flag4Description")`)
+ 4. Struct tag default         (JSON struct example: config{Flag1 int    `json:"9999"`)
+ 5. Go flag default            (Go example: `flag.StringVar(&config.Flag5, "Flag5Name", "Flag5DefaultValue", "Flag5Description")`)
 
 To overwrite a value, a CLI parameter may be set `go run main.go
---flag1=flag1CliValue`.  
+--flag1=flag1CliValue`.  Environmental variables may also be set via CLI, for
+example: `FLAG1=Flag1EnvValue go run main.go`, but they are lower priority than
+CLI flags.
 
-Environmental variables may also be set via CLI, for example:
-`FLAG1=Flag1EnvValue go run main.go`, but they are lower priority than CLI
-flags.
+jsonflag also supports:
+- **Default values** in tags
+- **Environmental variable expansion**  where if FLAG1=EnvFlagValue, and anywhere the value is $FLAG1, $FLAG1 will be expanded to EnvFlagValue. It does not matter where the variable is set, and `$` character is the signifier for a variable. `$
+
+## Installation
+
+Go get
+
+```bash
+go get github.com/zamicol/jsonflag
+```
+and import:
+
+```go
+import "github.com/zamicol/jsonflag"
+```
+
+
 
 ## Config Path
 
@@ -48,22 +66,6 @@ func main(){
 	jsonflag.Parse(&config)
 }
 ```
-
-
-## Installation
-
-Go get
-
-```bash
-go get github.com/zamicol/jsonflag
-```
-and import:
-
-```go
-import "github.com/zamicol/jsonflag"
-```
-
-
 
 ## Quick Example
 Example `config.json5` file:
@@ -114,26 +116,49 @@ Flag2 = Flag2EnvValue   // From environmental variable.
 Flag3 = 3               // From JSON file. 
 ```
 
+
+
+## Tag
+
+// TagConfig is for testing "tag design pattern" flags
+// Config's values must be exported for package `flag` to be able to set values.
+```GO
+type TagConfig struct {
+	UserName   string        `flag:"username" default:"defaultUserName" desc:"User name"`
+	Count      int           `flag:"count" default:"10" desc:"Item count"`
+	Enabled    bool          `flag:"enabled" default:"true" desc:"Feature toggle"`
+	Timeout    time.Duration `flag:"timeout" default:"5s" desc:"Operation timeout"`
+	Threshold  float64       `flag:"threshold" default:"0.75" desc:"Threshold value"`
+	MaxRetries uint          `flag:"max-retries" default:"3" desc:"Max retry attempts"`
+}
+```
+
+
+
 # Letter Casing For Flag Names
 Flag naming conventions vary by input type. 
 
 CLI flag names (not values) must start with lowercase letters (e.g., --flag1).
 
-For environmental variables, the flag’s name is converted to all uppercase, meaning
-environmental flag names (not values) are case insensitive. Characters other
-than ASCII letters, digits, and underscores are replaced with underscores, which
-makes dashed and dotted flag names settable in a shell: `log-level` is read
-from `LOG_LEVEL`, and `log.level` is read from `LOG_LEVEL`. `EnvPrefix`, when
-set, is prepended unchanged (`MYAPP_` + `log-level` is `MYAPP_LOG_LEVEL`). When
-the normalized name differs from the historical exact-uppercase spelling
+For environmental variables, the flag’s name is converted to all uppercase,
+meaning environmental flag names (not values) are case insensitive. Characters
+other than ASCII letters, digits, and underscores are replaced with underscores,
+which makes dashed and dotted flag names settable in a shell. For example,
+`log-level` or `log.level` is read from `LOG_LEVEL`. `EnvPrefix`, when set, is
+prepended unchanged (`MYAPP_` + `log-level` is `MYAPP_LOG_LEVEL`). When the
+normalized name differs from the historical exact-uppercase spelling
 (`LOG-LEVEL`), that historical name is used if the normalized variable is unset
 or empty.
 
-For JSON names, this package uses Go’s json package for decoding. The JSON decoder only has access to exported fields of structs and follows its own precedence for JSON decoding:
+**Go JSON naming** For JSON names, this package uses Go’s json package for
+decoding. The JSON decoder only has access to exported fields of structs and
+follows its own precedence for JSON decoding:
  1. Tags
  2. Exact case
  3. Case insensitive
 
-The name set by the Go flag package may be upper or lower case, but uppercase is recommended to align with Go naming conventions for exported fields.
+The name set by the Go flag package may be upper or lower case, but uppercase is
+recommended to align with Go naming conventions for exported fields.
 
-[See also the godocs for more complete documentation and a working example.](https://godoc.org/github.com/zamicol/jsonflag)
+[See also the godocs for more complete documentation and a working
+example.](https://godoc.org/github.com/zamicol/jsonflag)
