@@ -26,10 +26,7 @@ CLI flags.
 
 jsonflag also supports:
 - **Default values** in tags
-- **Environmental variable expansion**  where if FLAG1=EnvFlagValue, and
-  anywhere the value is $FLAG1, $FLAG1 will be expanded to EnvFlagValue. It does
-  not matter where the variable is set, and `$` character is the signifier for a
-  variable. `$
+- Config values are used literally. `$` is just a character; set a flag from the environment with a per-flag variable such as `FLAG1`.
 
 ## Installation
 
