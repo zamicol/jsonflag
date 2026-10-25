@@ -14,8 +14,8 @@
 // are ignored. To prevent a value from being set by flags, include it in the
 // config struct and JSON config file; it will still be populated.
 //
-// Config values are used literally. `$` is just a character; set a flag from
-// the environment with a per-flag variable such as FLAG1.
+// jsonflag never expands `$`. Config values and the config path are literal.
+// Set a flag from the environment with a per-flag variable such as FLAG1.
 //
 // # Letter Casing for Flag Names
 //
@@ -198,14 +198,15 @@ func envKey(flagName string) string {
 	}, strings.ToUpper(flagName))
 }
 
-// parseJSON parses the JSON file at configPath into the config struct c.
+// parseJSON parses the JSON file at configPath into c.
+// The path is used literally; `$` is not expanded.
 func parseJSON(configPath string, c interface{}) {
 	if configPath == "" {
 		return
 	}
 
 	var err error
-	configPath, err = filepath.Abs(os.ExpandEnv(configPath))
+	configPath, err = filepath.Abs(configPath)
 	if err != nil {
 		err = fmt.Errorf("%w; jsonflag: cannot get absolute config path: '%s'", err, configPath)
 		panic(err) // Fail fast matching flag.Parse() error reporting.
