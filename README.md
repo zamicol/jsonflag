@@ -67,7 +67,6 @@ func main(){
 }
 ```
 
-
 ## Quick Example
 Example `config.json5` file:
 ```json5
@@ -123,6 +122,7 @@ Flag3 = 3               // From JSON file.
 
 // TagConfig is for testing "tag design pattern" flags
 // Config's values must be exported for package `flag` to be able to set values.
+```GO
 type TagConfig struct {
 	UserName   string        `flag:"username" default:"defaultUserName" desc:"User name"`
 	Count      int           `flag:"count" default:"10" desc:"Item count"`
@@ -131,7 +131,7 @@ type TagConfig struct {
 	Threshold  float64       `flag:"threshold" default:"0.75" desc:"Threshold value"`
 	MaxRetries uint          `flag:"max-retries" default:"3" desc:"Max retry attempts"`
 }
-
+```
 
 
 
