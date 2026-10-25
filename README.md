@@ -3,7 +3,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/zamicol/jsonflag)](https://goreportcard.com/report/github.com/zamicol/jsonflag)
 [![GoDoc](https://godoc.org/github.com/zamicol/jsonflag?status.svg)](https://godoc.org/github.com/zamicol/jsonflag)
 
-
 jsonflag is a drop in replacement and extension of Go's flag package that
 seamlessly adds support for configs (JSON/JSON5), environmental variables,
 struct tag defaults, and CLI options.  Struct tag defaults and JSON configs
@@ -27,7 +26,10 @@ CLI flags.
 
 jsonflag also supports:
 - **Default values** in tags
-- **Environmental variable expansion**  where if FLAG1=EnvFlagValue, and anywhere the value is $FLAG1, $FLAG1 will be expanded to EnvFlagValue. It does not matter where the variable is set, and `$` character is the signifier for a variable. `$
+- **Environmental variable expansion**  where if FLAG1=EnvFlagValue, and
+  anywhere the value is $FLAG1, $FLAG1 will be expanded to EnvFlagValue. It does
+  not matter where the variable is set, and `$` character is the signifier for a
+  variable. `$
 
 ## Installation
 
@@ -41,7 +43,6 @@ and import:
 ```go
 import "github.com/zamicol/jsonflag"
 ```
-
 
 
 ## Config Path
@@ -116,10 +117,7 @@ Flag2 = Flag2EnvValue   // From environmental variable.
 Flag3 = 3               // From JSON file. 
 ```
 
-
-
 ## Tag
-
 // TagConfig is for testing "tag design pattern" flags
 // Config's values must be exported for package `flag` to be able to set values.
 ```GO
@@ -132,8 +130,6 @@ type TagConfig struct {
 	MaxRetries uint          `flag:"max-retries" default:"3" desc:"Max retry attempts"`
 }
 ```
-
-
 
 # Letter Casing For Flag Names
 Flag naming conventions vary by input type. 
