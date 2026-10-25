@@ -21,7 +21,14 @@
 // Flag naming conventions vary by input type:
 //   - CLI flag names (not values) must start with lowercase letters (e.g., --flag1).
 //   - For environmental variables, flag names are converted to all uppercase,
-//     making them case-insensitive (e.g., FLAG1 or flag1 both work).
+//     making them case-insensitive (e.g., FLAG1 or flag1 both work). Characters
+//     other than ASCII letters, digits, and underscores are replaced with
+//     underscores, so dashed and dotted names are settable in a shell:
+//     "log-level" is read from LOG_LEVEL and "log.level" from LOG_LEVEL.
+//     EnvPrefix is prepended unchanged, so prefix "MYAPP_" and flag
+//     "log-level" read MYAPP_LOG_LEVEL. When that normalized name differs
+//     from the historical exact-uppercase name (LOG-LEVEL), the historical
+//     name is used when the normalized variable is unset or empty.
 //   - For JSON names, this package uses Go's json package for decoding. The JSON
 //     decoder only accesses exported struct fields and follows this precedence:
 //     1. Tags
@@ -83,7 +90,8 @@ import (
 var Path string
 
 // EnvPrefix will be prepended to flag names if set. For example, with a prefix
-// of "MYAPP_", the flag "flag1" will become "MYAPP_FLAG1".
+// of "MYAPP_", the flag "flag1" will become "MYAPP_FLAG1" and the flag
+// "log-level" will become "MYAPP_LOG_LEVEL". The prefix is not rewritten.
 var EnvPrefix = ""
 
 func init() {
@@ -122,11 +130,42 @@ func Parse(c interface{}) {
 }
 
 // env sets environmental values on all flags based on flag name.
+//
+// The preferred variable is EnvPrefix plus a shell-safe form of the flag name:
+// uppercased, with every character other than an ASCII letter, digit, or
+// underscore replaced by '_'. "log-level" uses LOG_LEVEL, or MYAPP_LOG_LEVEL
+// when EnvPrefix is "MYAPP_". When that name differs from the legacy
+// exact-uppercase form ("LOG-LEVEL") and the preferred variable is unset or
+// empty, the legacy name is used.
 func env(f *flag.Flag) {
-	v := os.Getenv(EnvPrefix + strings.ToUpper(f.Name))
+	v := envValue(f.Name)
 	if v != "" {
 		flag.Set(f.Name, v)
 	}
+}
+
+// envValue returns the environmental value for flagName, or "" when none is set.
+func envValue(flagName string) string {
+	normalized := EnvPrefix + envKey(flagName)
+	if v := os.Getenv(normalized); v != "" {
+		return v
+	}
+	legacy := EnvPrefix + strings.ToUpper(flagName)
+	if legacy == normalized {
+		return ""
+	}
+	return os.Getenv(legacy)
+}
+
+// envKey converts a flag name into an environment-variable suffix.
+// "log-level" and "log.level" both become "LOG_LEVEL".
+func envKey(flagName string) string {
+	return strings.Map(func(r rune) rune {
+		if (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' {
+			return r
+		}
+		return '_'
+	}, strings.ToUpper(flagName))
 }
 
 // parseJSON parses the JSON file at configPath into the config struct c.
