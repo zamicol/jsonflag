@@ -135,25 +135,26 @@ type TagConfig struct {
 
 
 
-
-
-
-
-
-
-
 # Letter Casing For Flag Names
 Flag naming conventions vary by input type. 
 
 CLI flag names (not values) must start with lowercase letters (e.g., --flag1).
 
-For environmental variables, the flag’s name is converted to all uppercase, meaning environmental flag names (not values) are case insensitive.
+For environmental variables, the flag’s name is converted to all uppercase,
+meaning environmental flag names (not values) are case insensitive. Characters
+other than ASCII letters, digits, and underscores are replaced with underscores,
+which makes dashed and dotted flag names settable in a shell. For example,
+`log-level` or `log.level` is read from `LOG_LEVEL`.
 
-For JSON names, this package uses Go’s json package for decoding. The JSON decoder only has access to exported fields of structs and follows its own precedence for JSON decoding:
+**Go JSON naming** For JSON names, this package uses Go’s json package for
+decoding. The JSON decoder only has access to exported fields of structs and
+follows its own precedence for JSON decoding:
  1. Tags
  2. Exact case
  3. Case insensitive
 
-The name set by the Go flag package may be upper or lower case, but uppercase is recommended to align with Go naming conventions for exported fields.
+The name set by the Go flag package may be upper or lower case, but uppercase is
+recommended to align with Go naming conventions for exported fields.
 
-[See also the godocs for more complete documentation and a working example.](https://godoc.org/github.com/zamicol/jsonflag)
+[See also the godocs for more complete documentation and a working
+example.](https://godoc.org/github.com/zamicol/jsonflag)
