@@ -22,19 +22,20 @@ type goFlagConfig struct {
 	Flag4 string // Set by flag default only      - Flag default precedence
 	Flag5 string // Set by JSON and flag default  - JSON precedence
 
-	// Per-flag environmental variables override JSON and defaults.
-	Flag6 string // Set by FLAG6, which wins over the flag default. No JSON or CLI.
-	Flag7 string // Set by JSON only.
-	Flag8 string // Set by the flag default only. No JSON, env, or CLI.
+	// Environment Variables (EnvVars)
+	Flag6 string // Set by environmental variable, flag default, and JSON. No CLI. - Env precedence
+	Flag7 string // Set by JSON and flag default. No environmental variable or CLI. - JSON precedence
+	Flag8 string // Set by flag default only. No JSON, environmental variable, or CLI. - Flag default precedence
 
 	//Flag6 int    `json:"9999"` // Tests JSON tag. JSON with flag default int and JSON tag - (Three places are set: flag default, json tag, and JSON) - JSON precedence.
 }
 
-// fc holds the parsed Go-flag example config.
+// fc is the global for Go Flag examples.
 var fc goFlagConfig
 
-// exampleInitGoFlagConfig registers the Go-flag example and parses it.
-// TestMain calls it so the flags exist before the test binary parses CLI args.
+// exampleInitGoFlagConfig is an example of using jsonflag as a drop-in replacement for Go's flag.
+// It shows how an application initializes flag definitions using the "Go flag" design pattern.
+// TestMain calls it. Do not run it as a test; it is not exported.
 func exampleInitGoFlagConfig() {
 	flag.StringVar(&fc.Flag1, "flag1", "flagDefault1", "flag1Desc") // Basic CLI flag
 	// Flag 2 and 3 are missing here in order to test values that populate only from the JSON config.
@@ -50,9 +51,10 @@ func exampleInitGoFlagConfig() {
 	Parse(&fc)
 }
 
-// Example_goFlagConfig prints the parsed Go-flag config.
+// Example prints out values
+// go test -run Example_goFlagConfig --config=test_config.json5
 //
-//	FLAG6=Flag6EnvValue JSONFLAG_FLAG10=FLAG10VALUE go test -run Example_goFlagConfig --flag1=cliFlag1 --config=test_config.json5
+//	FLAG6=Flag6EnvValue go test -run Example_goFlagConfig --flag1=cliFlag1 --config=test_config.json5
 func Example_goFlagConfig() {
 	//exampleInitGoFlagConfig() is called by TestMain since it uses the flag
 	//package cannot be called inside of an example since flags must be

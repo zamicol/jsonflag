@@ -26,7 +26,6 @@ CLI flags.
 
 jsonflag also supports:
 - **Default values** in tags
-- jsonflag never expands `$`. Config values and the `--config` path are literal; set a flag from the environment with a per-flag variable such as `FLAG1`.
 
 ## Installation
 
@@ -45,20 +44,7 @@ import "github.com/zamicol/jsonflag"
 ## Config Path
 
 If not specified, the default path is `config.json5` in the current working
-directory. The path is literal: `$` is not expanded.
-
-Apps that want an OS-appropriate default should build it in Go.
-`os.UserHomeDir()` is the alternative when a home directory is enough:
-
-```go
-dir, err := os.UserConfigDir()
-if err != nil {
-	panic(err)
-}
-defaultPath := filepath.Join(dir, "myapp", "config.json5")
-```
-
-The config path can be specified in two ways:
+directory. The config path can be specified in two ways:
 
 1. Via command line argument (which takes precedence):
 ```bash
@@ -168,3 +154,18 @@ recommended to align with Go naming conventions for exported fields.
 
 [See also the godocs for more complete documentation and a working
 example.](https://godoc.org/github.com/zamicol/jsonflag)
+
+## Default config location
+
+jsonflag's default path is `config.json5` in the working directory. An
+application that wants an OS-appropriate location should build the path in Go
+and assign it to `jsonflag.Path`. `os.UserHomeDir()` is the alternative when a
+home directory is enough.
+
+```go
+dir, err := os.UserConfigDir()
+if err != nil {
+	panic(err)
+}
+defaultPath := filepath.Join(dir, "myapp", "config.json5")
+```
