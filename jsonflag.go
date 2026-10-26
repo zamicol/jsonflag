@@ -71,10 +71,13 @@
 // This package follows flag.Parse()'s fail-fast design and panics on error.
 //
 // # Testing
-// `go test` will fail.
 //
-// Since jsonflag builds on flag, tests must include CLI flags to verify parsing.
-// Without flags, tests may fail. Example test commands:
+// Plain `go test` passes. TestMain fills missing example defaults and leaves
+// existing env vars and --flag1/--config flags unchanged:
+//   - FLAG6=Flag6EnvValue and JSONFLAG_FLAG10=FLAG10VALUE when unset
+//   - --flag1=cliFlag1 and --config=test_config.json5 when absent
+//
+// These commands still exercise each --config/-config form:
 //   - Test 1 (tests --config= form):
 //     JSONFLAG_FLAG10=FLAG10VALUE FLAG6=Flag6EnvValue go test --flag1=cliFlag1 --config=test_config.json5
 //   - Test 2 (tests -config= form):
