@@ -33,7 +33,20 @@ type TagConfig struct {
 // 	MaxRetries: 5,                // Env override
 // }
 
+// TestTagConfig checks tag-flag precedence.
+//
+//   - JSON: username, count, timeout
+//   - env: enabled, max-retries
+//   - default: threshold
+//
+// --config overrides Path, so the same keys are in test_config.json5.
+// --username is not passed: TestMain parses flags before tag flags exist.
 func TestTagConfig(t *testing.T) {
+	// Host env outranks JSON. USERNAME is commonly set.
+	os.Unsetenv("USERNAME")
+	os.Unsetenv("COUNT")
+	os.Unsetenv("TIMEOUT")
+	os.Unsetenv("THRESHOLD")
 	os.Setenv("ENABLED", "false")
 	os.Setenv("MAX_RETRIES", "5")
 	defer os.Unsetenv("ENABLED")
@@ -41,15 +54,15 @@ func TestTagConfig(t *testing.T) {
 
 	var tc TagConfig
 
-	// Use a test-specific config file
+	// Use a test-specific config file. --config overrides Path inside Parse.
 	origPath := Path
-	Path = "test_tags.json5" // should contain: {"count": 20, "timeout": "10s"}
+	Path = "test_tags.json5" // username, count, timeout
 	defer func() { Path = origPath }()
 
 	Parse(&tc)
 
 	// Now assert values:
-	if tc.UserName != "cliName" { // assuming run with --username=cliName
+	if tc.UserName != "cliName" { // JSON value in the test configs
 		t.Errorf("expected cliName, got %s", tc.UserName)
 	}
 	if tc.Count != 20 {
