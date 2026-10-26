@@ -14,8 +14,8 @@
 // are ignored. To prevent a value from being set by flags, include it in the
 // config struct and JSON config file; it will still be populated.
 //
-// Environmental variables in JSON configs are expanded. See the Testing section
-// for an example where "$Flag8" is replaced with its environmental value.
+// jsonflag never expands `$`. Config values and the config path are literal.
+// Set a flag from the environment with a per-flag variable such as FLAG1.
 //
 // # Letter Casing for Flag Names
 //
@@ -76,13 +76,13 @@
 // Since jsonflag builds on flag, tests must include CLI flags to verify parsing.
 // Without flags, tests may fail. Example test commands:
 //   - Test 1 (tests --config= form):
-//     JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 --config=test_config.json5
+//     JSONFLAG_FLAG10=FLAG10VALUE FLAG6=Flag6EnvValue go test --flag1=cliFlag1 --config=test_config.json5
 //   - Test 2 (tests -config= form):
-//     JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 -config=test_config.json5
+//     JSONFLAG_FLAG10=FLAG10VALUE FLAG6=Flag6EnvValue go test --flag1=cliFlag1 -config=test_config.json5
 //   - Test 3 (tests --config form):
-//     JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 --config test_config.json5
+//     JSONFLAG_FLAG10=FLAG10VALUE FLAG6=Flag6EnvValue go test --flag1=cliFlag1 --config test_config.json5
 //   - Test 4 (tests -config form):
-//     JSONFLAG_FLAG10=FLAG10VALUE FLAG7=FLAG7VALUE Flag8=Flag8Env go test --flag1=cliFlag1 -config test_config.json5
+//     JSONFLAG_FLAG10=FLAG10VALUE FLAG6=Flag6EnvValue go test --flag1=cliFlag1 -config test_config.json5
 package jsonflag
 
 import (
@@ -198,14 +198,15 @@ func envKey(flagName string) string {
 	}, strings.ToUpper(flagName))
 }
 
-// parseJSON parses the JSON file at configPath into the config struct c.
+// parseJSON parses the JSON file at configPath into c.
+// The path is used literally; `$` is not expanded.
 func parseJSON(configPath string, c interface{}) {
 	if configPath == "" {
 		return
 	}
 
 	var err error
-	configPath, err = filepath.Abs(os.ExpandEnv(configPath))
+	configPath, err = filepath.Abs(configPath)
 	if err != nil {
 		err = fmt.Errorf("%w; jsonflag: cannot get absolute config path: '%s'", err, configPath)
 		panic(err) // Fail fast matching flag.Parse() error reporting.
@@ -224,44 +225,6 @@ func parseJSON(configPath string, c interface{}) {
 	if err != nil {
 		err = fmt.Errorf("%w; jsonflag: unable to decode config", err)
 		panic(err) // Fail fast matching flag.Parse() error reporting.
-	}
-
-	// expandEnvInStruct env variables in the config struct.
-	expandEnvInStruct(reflect.ValueOf(c))
-}
-
-// expandEnvInStruct recursively expands `$VAR` style environment variables
-// if the underlying type is string (including nested structs, pointers, etc.).
-// (Expansion example, on a system where `USER` is set to `user`, `$USER` will
-// become 'user')
-func expandEnvInStruct(v reflect.Value) {
-	switch v.Kind() {
-	case reflect.Ptr:
-		if v.IsNil() {
-			return
-		}
-		expandEnvInStruct(v.Elem())
-
-	case reflect.Struct:
-		for i := 0; i < v.NumField(); i++ {
-			expandEnvInStruct(v.Field(i))
-		}
-
-	case reflect.Slice:
-		for i := 0; i < v.Len(); i++ {
-			expandEnvInStruct(v.Index(i))
-		}
-
-	case reflect.Map:
-		for _, key := range v.MapKeys() {
-			expandEnvInStruct(v.MapIndex(key))
-		}
-
-	case reflect.String:
-		if v.CanSet() {
-			expanded := os.ExpandEnv(v.String())
-			v.SetString(expanded)
-		}
 	}
 }
 

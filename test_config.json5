@@ -5,7 +5,8 @@
 		// flag4 is set by flag default only.
     "flag5": "jsonFlag5",
 
-		"flag7":"$FLAG7ENVEXPANSION", 
+		"flag6": "jsonFlag6",
+		"flag7": "jsonFlag7", 
 
 		// 		"flagsix": 6,
 		

@@ -22,10 +22,10 @@ type goFlagConfig struct {
 	Flag4 string // Set by flag default only      - Flag default precedence
 	Flag5 string // Set by JSON and flag default  - JSON precedence
 
-	// Environment Variables (EnvVars) and environmental variable expansion
-	Flag6 string // Set by environmental variable, flag default, and JSON. No CLI, no expansion. - Env precedence
-	Flag7 string // Set by environmental value expansion, flag default, and JSON (pre-expansion).  No pure environmental value or CLI. - JSON precedence then unexpanded.
-	Flag8 string // Test expanding the flag default value ($FlagDefault8) with a value from an environmental variable. No JSON or CLI.  Expansion variable set in ENV and pre-expansion value set in JSON config.
+	// Environment Variables (EnvVars)
+	Flag6 string // Set by environmental variable, flag default, and JSON. No CLI. - Env precedence
+	Flag7 string // Set by JSON and flag default. No environmental variable or CLI. - JSON precedence
+	Flag8 string // Set by flag default only. No JSON, environmental variable, or CLI. - Flag default precedence
 
 	//Flag6 int    `json:"9999"` // Tests JSON tag. JSON with flag default int and JSON tag - (Three places are set: flag default, json tag, and JSON) - JSON precedence.
 }
@@ -33,8 +33,9 @@ type goFlagConfig struct {
 // fc is the global for Go Flag examples.
 var fc goFlagConfig
 
-// exampleInitFlags is an example of using jsonflag as a drop-in replacement for Go's flag.  Do not run in testing since it is not exported.
-// how an application can initialize flag definitions using the "Go flag" design pattern.
+// exampleInitGoFlagConfig is an example of using jsonflag as a drop-in replacement for Go's flag.
+// It shows how an application initializes flag definitions using the "Go flag" design pattern.
+// TestMain calls it. Do not run it as a test; it is not exported.
 func exampleInitGoFlagConfig() {
 	flag.StringVar(&fc.Flag1, "flag1", "flagDefault1", "flag1Desc") // Basic CLI flag
 	// Flag 2 and 3 are missing here in order to test values that populate only from the JSON config.
@@ -43,10 +44,8 @@ func exampleInitGoFlagConfig() {
 
 	//Env Vars
 	flag.StringVar(&fc.Flag6, "flag6", "flagDefault6", "Flag6's value comes from environmental variable.")
-	flag.StringVar(&fc.Flag7, "flag7", "flagDefault7", "Flag7 tests environmental expansion for JSON config.")
-	flag.StringVar(&fc.Flag8, "flag8", "$FLAG8ENVEXPANSION", "Flag8 tests environmental expansion for default flag value.")
-
-	//flag.StringVar(&fc.Flag8, "flag8", "$FLAG8", "Flag8's value comes from expanding the default flag value ($FLAG) with a variable to an environmental variable.")
+	flag.StringVar(&fc.Flag7, "flag7", "flagDefault7", "Flag7's value comes from JSON.")
+	flag.StringVar(&fc.Flag8, "flag8", "flagDefault8", "Flag8 keeps its flag default.")
 
 	//flag.IntVar(&fc.Flag6, "flag6", 1111, "flag6Desc") // Default value to '1111' for testing.  (JSON config set to '6') // TODO seems to be a bug with int JSON
 	Parse(&fc)
@@ -55,7 +54,7 @@ func exampleInitGoFlagConfig() {
 // Example prints out values
 // go test -run Example_goFlagConfig --config=test_config.json5
 //
-//	FLAG6=Flag6EnvValue FLAG7ENVEXPANSION=Flag7EnvExpansionValue  FLAG8ENVEXPANSION=Flag8EnvExpansionValue go test -run Example_goFlagConfig --flag1=cliFlag1 --config=test_config.json5
+//	FLAG6=Flag6EnvValue go test -run Example_goFlagConfig --flag1=cliFlag1 --config=test_config.json5
 func Example_goFlagConfig() {
 	//exampleInitGoFlagConfig() is called by TestMain since it uses the flag
 	//package cannot be called inside of an example since flags must be
@@ -65,9 +64,10 @@ func Example_goFlagConfig() {
 	//idiomatic pattern.
 
 	fmt.Println(fc)
-	// Output: {cliFlag1 jsonFlag2 3 flagDefault4 jsonFlag5 Flag6EnvValue Flag7EnvExpansionValue Flag8EnvExpansionValue}
+	// Output: {cliFlag1 jsonFlag2 3 flagDefault4 jsonFlag5 Flag6EnvValue jsonFlag7 flagDefault8}
 }
 
+// envPreConfig holds the EnvPrefix example values.
 var envPreConfig EnvPrefixConfig
 
 // EnvPrefixConfig is for testing environmental prefix which is useful for
