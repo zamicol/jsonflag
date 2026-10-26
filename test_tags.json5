@@ -1,5 +1,6 @@
 {
+	"username": "cliName",
 	"count": 20,
-	"timeout": "10s",
+	"timeout": 10000000000, // 10s in nanoseconds
 	// threshold omitted to test default
 }

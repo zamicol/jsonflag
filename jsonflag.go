@@ -118,8 +118,8 @@ func init() {
 
 // Parse reads the config file and parses CLI flags into c with a single flag.Parse() call.
 //  1. Parsing --config from command line (if present).
-//  2. Loading and decoding JSON config.
-//  3. Registering any missing flags from struct tags.
+//  2. Registering any missing flags from struct tags.
+//  3. Loading and decoding JSON config.
 //  4. Applying environment variables.
 //  5. Finally parsing CLI flags (highest precedence).
 func Parse(c interface{}) {
@@ -142,8 +142,10 @@ func Parse(c interface{}) {
 		}
 	}
 
-	parseJSON(Path, c)              // Parse JSON config.
+	// flag.*Var writes its default into the field. Register first so JSON, env,
+	// and CLI overwrite that default.
 	registerTagFlags(c)             // Register struct tags
+	parseJSON(Path, c)              // Parse JSON config.
 	flag.VisitAll(applyEnvOverride) // Apply environment variables to all defined flags
 	flag.Parse()                    // Finally parse CLI flags, override everything else
 }

@@ -8,6 +8,11 @@
 		"flag6": "jsonFlag6",
 		"flag7": "jsonFlag7", 
 
+		// TagConfig. Same keys as test_tags.json5. Threshold stays omitted.
+		"username": "cliName",
+		"count": 20,
+		"timeout": 10000000000, // 10s in nanoseconds 
+
 		// 		"flagsix": 6,
 		
 		

@@ -90,5 +90,7 @@ func ExampleEnvPrefix() {
 	flag.StringVar(&envPreConfig.Flag10, "flag10", "defaultValue", "Flag10 tests prefixing the EnvPrefix to env vars")
 	Parse(&envPreConfig)
 	fmt.Println(envPreConfig)
-	// // Output: {FLAG10VALUE}
+	// Output:
+	// ExampleEnvPrefix
+	// {FLAG10VALUE}
 }
