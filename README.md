@@ -64,6 +64,8 @@ func main(){
 }
 ```
 
+(Related reminder: `os.UserConfigDir()` may be idiomatic for some applications.)
+
 ## Quick Example
 Example `config.json5` file:
 ```json5
@@ -90,13 +92,14 @@ func main(){
 	flag.StringVar(&config.Flag2, "Flag2Name", "Flag2DefaultValue", "Flag2Description")
 	flag.IntVar(&config.Flag3, "Flag3Name", 1, "Flag3Description")
 
-	// Instead of `flag.parse`, use `jsonflag.Parse(&config)` which is the only line that must be different from using `flag` normally.  
-	
+	// Instead of `flag.parse`, use `jsonflag.Parse(&config)` which is the only 
+  // line that must be different from using `flag` normally.
 	jsonflag.Parse(&config)
 }
 ```
 
-The default values will be overwritten by the values in the JSON config, which may further be overwritten by environmental variables and CLI parameters.
+The default values will be overwritten by the values in the JSON config, which
+may further be overwritten by environmental variables and CLI parameters.
 
 Example overwriting values using an environmental variable and command line flag:
 
@@ -132,7 +135,7 @@ Flag naming conventions vary by input type.
 
 CLI flag names (not values) must start with lowercase letters (e.g., --flag1).
 
-For environmental variables, the flag’s name is converted to all uppercase,
+Environmental variables are converted to all uppercase,
 meaning environmental flag names (not values) are case insensitive. Characters
 other than ASCII letters, digits, and underscores are replaced with underscores,
 which makes dashed and dotted flag names settable in a shell. For example,
@@ -154,18 +157,3 @@ recommended to align with Go naming conventions for exported fields.
 
 [See also the godocs for more complete documentation and a working
 example.](https://godoc.org/github.com/zamicol/jsonflag)
-
-## Default config location
-
-jsonflag's default path is `config.json5` in the working directory. An
-application that wants an OS-appropriate location should build the path in Go
-and assign it to `jsonflag.Path`. `os.UserHomeDir()` is the alternative when a
-home directory is enough.
-
-```go
-dir, err := os.UserConfigDir()
-if err != nil {
-	panic(err)
-}
-defaultPath := filepath.Join(dir, "myapp", "config.json5")
-```
