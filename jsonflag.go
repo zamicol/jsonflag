@@ -27,9 +27,7 @@
 //     underscores, so dashed and dotted names are settable in a shell:
 //     "log-level" is read from LOG_LEVEL and "log.level" from LOG_LEVEL.
 //     EnvPrefix is prepended unchanged, so prefix "MYAPP_" and flag
-//     "log-level" read MYAPP_LOG_LEVEL. When that normalized name differs
-//     from the historical exact-uppercase name (LOG-LEVEL), the historical
-//     name is used when the normalized variable is unset or empty.
+//     "log-level" read MYAPP_LOG_LEVEL.
 //   - For JSON names, this package uses Go's json package for decoding. The JSON
 //     decoder only accesses exported struct fields and follows this precedence:
 //     1. Tags
@@ -158,38 +156,19 @@ func Parse(c interface{}) {
 // `TESTENV=TestValue`. EnvVars have higher precedence than JSON config but lower than
 // CLI flags.
 //
-// The value is read with envValue. The preferred variable is EnvPrefix plus a
-// shell-safe form of the flag name: uppercased, with every character other than
-// an ASCII letter, digit, or underscore replaced by '_'. "log-level" uses
-// LOG_LEVEL, or MYAPP_LOG_LEVEL when EnvPrefix is "MYAPP_". When that name
-// differs from the legacy exact-uppercase form ("LOG-LEVEL") and the preferred
-// variable is unset or empty, the legacy name is used. flag.Set failures panic.
+// The variable is EnvPrefix plus a shell-safe form of the flag name: uppercased,
+// with every character other than an ASCII letter, digit, or underscore replaced
+// by '_'. "log-level" uses LOG_LEVEL, or MYAPP_LOG_LEVEL when EnvPrefix is
+// "MYAPP_". An unset or empty variable leaves the flag unchanged. flag.Set
+// failures panic.
 func applyEnvOverride(f *flag.Flag) {
 	envName := EnvPrefix + envKey(f.Name)
-	value := envValue(f.Name)
+	value := os.Getenv(envName)
 	if value != "" {
-		// Report the variable that supplied the value. envValue prefers the
-		// shell-safe name and falls back to the historical exact-uppercase name.
-		if os.Getenv(envName) == "" {
-			envName = EnvPrefix + strings.ToUpper(f.Name)
-		}
 		if err := flag.Set(f.Name, value); err != nil {
 			panic(fmt.Errorf("jsonflag: failed to set flag --%s from env %s=%q: %w", f.Name, envName, value, err))
 		}
 	}
-}
-
-// envValue returns the environmental value for flagName, or "" when none is set.
-func envValue(flagName string) string {
-	normalized := EnvPrefix + envKey(flagName)
-	if v := os.Getenv(normalized); v != "" {
-		return v
-	}
-	legacy := EnvPrefix + strings.ToUpper(flagName)
-	if legacy == normalized {
-		return ""
-	}
-	return os.Getenv(legacy)
 }
 
 // envKey converts a flag name into an environment-variable suffix.

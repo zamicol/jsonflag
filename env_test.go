@@ -77,97 +77,28 @@ func TestEnvSetsNormalizedNames(t *testing.T) {
 	}
 }
 
-func TestEnvLegacyFallback(t *testing.T) {
-	tests := []struct {
-		name     string
-		flagName string
-		prefix   string
-		set      map[string]string
-		unset    []string
-		want     string
-	}{
-		{
-			name:     "dashed",
-			flagName: "log-level",
-			set:      map[string]string{"LOG-LEVEL": "from-legacy"},
-			unset:    []string{"LOG_LEVEL"},
-			want:     "from-legacy",
-		},
-		{
-			name:     "dotted",
-			flagName: "db.host",
-			set:      map[string]string{"DB.HOST": "legacy-host"},
-			unset:    []string{"DB_HOST"},
-			want:     "legacy-host",
-		},
-		{
-			name:     "dashed with prefix",
-			flagName: "log-level",
-			prefix:   "MYAPP_",
-			set:      map[string]string{"MYAPP_LOG-LEVEL": "prefixed-legacy"},
-			unset:    []string{"MYAPP_LOG_LEVEL"},
-			want:     "prefixed-legacy",
-		},
-		{
-			name:     "dotted with prefix",
-			flagName: "db.host",
-			prefix:   "MYAPP_",
-			set:      map[string]string{"MYAPP_DB.HOST": "prefixed-dot-legacy"},
-			unset:    []string{"MYAPP_DB_HOST"},
-			want:     "prefixed-dot-legacy",
-		},
-		{
-			name:     "normalized wins over legacy",
-			flagName: "log-level",
-			set:      map[string]string{"LOG_LEVEL": "from-normalized", "LOG-LEVEL": "from-legacy"},
-			want:     "from-normalized",
-		},
-		{
-			name:     "empty normalized falls back to legacy",
-			flagName: "log-level",
-			set:      map[string]string{"LOG_LEVEL": "", "LOG-LEVEL": "from-legacy"},
-			want:     "from-legacy",
-		},
-		{
-			name:     "mixed separators with prefix",
-			flagName: "server.bind-addr",
-			prefix:   "MYAPP_",
-			set:      map[string]string{"MYAPP_SERVER.BIND-ADDR": "legacy-bind"},
-			unset:    []string{"MYAPP_SERVER_BIND_ADDR"},
-			want:     "legacy-bind",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			setEnvPrefix(t, tt.prefix)
-			restoreFlag(t, tt.flagName)
-			mutateEnv(t, tt.set, tt.unset)
-
-			if got := envValue(tt.flagName); got != tt.want {
-				t.Fatalf("envValue(%q) = %q, want %q", tt.flagName, got, tt.want)
-			}
-			applyEnvOverride(flag.Lookup(tt.flagName))
-			if got := flag.Lookup(tt.flagName).Value.String(); got != tt.want {
-				t.Fatalf("flag %q = %q, want %q", tt.flagName, got, tt.want)
-			}
-		})
-	}
-}
-
+// TestEnvPlainNamesStayExact checks flags whose names need no replacement.
 func TestEnvPlainNamesStayExact(t *testing.T) {
 	t.Run("underscore lookalike is ignored", func(t *testing.T) {
 		setEnvPrefix(t, "")
+		restoreFlag(t, "flag1")
 		mutateEnv(t, map[string]string{"FLAG_1": "nope"}, []string{"FLAG1"})
-		if got := envValue("flag1"); got != "" {
-			t.Fatalf("envValue(flag1) = %q, want empty", got)
+		if err := flag.Set("flag1", "keep"); err != nil {
+			t.Fatal(err)
+		}
+		applyEnvOverride(flag.Lookup("flag1"))
+		if got := flag.Lookup("flag1").Value.String(); got != "keep" {
+			t.Fatalf("flag flag1 = %q, want keep", got)
 		}
 	})
 
 	t.Run("prefix is prepended unchanged", func(t *testing.T) {
 		setEnvPrefix(t, "JSONFLAG_")
-		mutateEnv(t, map[string]string{"JSONFLAG_FLAG10": "FLAG10VALUE"}, nil)
-		if got := envValue("flag10"); got != "FLAG10VALUE" {
-			t.Fatalf("envValue(flag10) = %q, want FLAG10VALUE", got)
+		restoreFlag(t, "flag1")
+		mutateEnv(t, map[string]string{"JSONFLAG_FLAG1": "FLAG1VALUE"}, []string{"FLAG1"})
+		applyEnvOverride(flag.Lookup("flag1"))
+		if got := flag.Lookup("flag1").Value.String(); got != "FLAG1VALUE" {
+			t.Fatalf("flag flag1 = %q, want FLAG1VALUE", got)
 		}
 	})
 
