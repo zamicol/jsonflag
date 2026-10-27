@@ -121,13 +121,13 @@ Flag3 = 3               // From JSON file.
 // Config's values must be exported for package `flag` to be able to set values.
 ```GO
 type TagConfig struct {
-	UserName   string        `flag:"username" default:"defaultUserName" desc:"User name"`
-	Count      int           `flag:"count" default:"10" desc:"Item count"`
-	Enabled    bool          `flag:"enabled" default:"true" desc:"Feature toggle"`
-	Timeout    time.Duration `flag:"timeout" default:"5s" desc:"Operation timeout"`
-	Threshold  float64       `flag:"threshold" default:"0.75" desc:"Threshold value"`
-	MaxRetries uint          `flag:"max-retries" default:"3" desc:"Max retry attempts"`
-	TitleDelimiter string `default:"_" json:"Title_Delimiter" flag:"title-delimiter" env:"TITLE_DELIMITER" desc:"Delimiter for titles in filenames"`
+	UserName       string        `flag:"username" default:"defaultUserName" desc:"User name"`
+	Count          int           `flag:"count" default:"10" desc:"Item count"`
+	Enabled        bool          `flag:"enabled" default:"true" desc:"Feature toggle"`
+	Timeout        time.Duration `flag:"timeout" default:"5s" desc:"Operation timeout"`
+	Threshold      float64       `flag:"threshold" default:"0.75" desc:"Threshold value"`
+	MaxRetries     uint          `flag:"max-retries" default:"3" desc:"Max retry attempts"`
+	TitleDelimiter string        `default:"_" json:"Title_Delimiter" flag:"title-delimiter" env:"TITLE_DELIMITER" desc:"Delimiter for titles in filenames"`
 }
 ```
 

@@ -109,8 +109,6 @@ var Path string
 // EnvPrefix will be prepended to flag names if set. For example, with a prefix
 // of "MYAPP_", the flag "flag1" will become "MYAPP_FLAG1" and the flag
 // "log-level" will become "MYAPP_LOG_LEVEL". The prefix is not rewritten.
-// An `env` tag is prepended the same way and is not rewritten:
-// env:"TITLE_DELIMITER" becomes "MYAPP_TITLE_DELIMITER".
 //
 // Prefixes are useful for namespacing configurations, ensuring any potential
 // name collisions with existing environmental variables are explicitly
@@ -167,9 +165,8 @@ var envTags = map[string]string{}
 // The variable is EnvPrefix plus a shell-safe form of the flag name: uppercased,
 // with every character other than an ASCII letter, digit, or underscore replaced
 // by '_'. "log-level" uses LOG_LEVEL, or MYAPP_LOG_LEVEL when EnvPrefix is
-// "MYAPP_". An `env` tag, when set, is the variable name as written; EnvPrefix
-// is still prepended. An unset or empty variable leaves the flag unchanged.
-// flag.Set failures panic.
+// "MYAPP_". An unset or empty variable leaves the flag unchanged. flag.Set
+// failures panic.
 func applyEnvOverride(f *flag.Flag) {
 	suffix := envKey(f.Name)
 	if tag, ok := envTags[f.Name]; ok {
