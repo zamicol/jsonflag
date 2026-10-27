@@ -127,8 +127,13 @@ type TagConfig struct {
 	Timeout    time.Duration `flag:"timeout" default:"5s" desc:"Operation timeout"`
 	Threshold  float64       `flag:"threshold" default:"0.75" desc:"Threshold value"`
 	MaxRetries uint          `flag:"max-retries" default:"3" desc:"Max retry attempts"`
+	TitleDelimiter string `default:"_" json:"Title_Delimiter" flag:"title-delimiter" env:"TITLE_DELIMITER" desc:"Delimiter for titles in filenames"`
 }
 ```
+
+An `env` tag names that field's environment variable. The value is used as
+written, and `EnvPrefix` is still prepended (`MYAPP_` + `TITLE_DELIMITER` is
+`MYAPP_TITLE_DELIMITER`). An `env` tag alone registers the flag.
 
 # Letter Casing For Flag Names
 Flag naming conventions vary by input type. 

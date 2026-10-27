@@ -28,6 +28,9 @@
 //     "log-level" is read from LOG_LEVEL and "log.level" from LOG_LEVEL.
 //     EnvPrefix is prepended unchanged, so prefix "MYAPP_" and flag
 //     "log-level" read MYAPP_LOG_LEVEL.
+//     An `env` tag names the variable as written. EnvPrefix is still
+//     prepended: tag "TITLE_DELIMITER" and prefix "MYAPP_" read
+//     MYAPP_TITLE_DELIMITER. An `env` tag alone also registers the flag.
 //   - For JSON names, this package uses Go's json package for decoding. The JSON
 //     decoder only accesses exported struct fields and follows this precedence:
 //     1. Tags
@@ -106,6 +109,8 @@ var Path string
 // EnvPrefix will be prepended to flag names if set. For example, with a prefix
 // of "MYAPP_", the flag "flag1" will become "MYAPP_FLAG1" and the flag
 // "log-level" will become "MYAPP_LOG_LEVEL". The prefix is not rewritten.
+// An `env` tag is prepended the same way and is not rewritten:
+// env:"TITLE_DELIMITER" becomes "MYAPP_TITLE_DELIMITER".
 //
 // Prefixes are useful for namespacing configurations, ensuring any potential
 // name collisions with existing environmental variables are explicitly
@@ -151,18 +156,26 @@ func Parse(c interface{}) {
 	flag.Parse()                    // Finally parse CLI flags, override everything else
 }
 
-// applyEnvOverride applies environment variables to defined flags. (Example,
-// value `$TestEnv` is replaced to `TestValue` if set by an env variable:
-// `TESTENV=TestValue`. EnvVars have higher precedence than JSON config but lower than
-// CLI flags.
+// envTags maps a flag name to its env tag value.
+//   - The tag is the variable name, as written.
+//   - EnvPrefix is still prepended.
+var envTags = map[string]string{}
+
+// applyEnvOverride applies environment variables to defined flags. EnvVars have
+// higher precedence than JSON config but lower than CLI flags.
 //
 // The variable is EnvPrefix plus a shell-safe form of the flag name: uppercased,
 // with every character other than an ASCII letter, digit, or underscore replaced
 // by '_'. "log-level" uses LOG_LEVEL, or MYAPP_LOG_LEVEL when EnvPrefix is
-// "MYAPP_". An unset or empty variable leaves the flag unchanged. flag.Set
-// failures panic.
+// "MYAPP_". An `env` tag, when set, is the variable name as written; EnvPrefix
+// is still prepended. An unset or empty variable leaves the flag unchanged.
+// flag.Set failures panic.
 func applyEnvOverride(f *flag.Flag) {
-	envName := EnvPrefix + envKey(f.Name)
+	suffix := envKey(f.Name)
+	if tag, ok := envTags[f.Name]; ok {
+		suffix = tag
+	}
+	envName := EnvPrefix + suffix
 	value := os.Getenv(envName)
 	if value != "" {
 		if err := flag.Set(f.Name, value); err != nil {
@@ -236,10 +249,16 @@ func registerTagFlags(c interface{}) {
 		flagName := field.Tag.Get("flag")
 		defaultVal := field.Tag.Get("default")
 		desc := field.Tag.Get("desc")
+		envName := field.Tag.Get("env")
 
 		// Default flag name to field name (lowercase) if not specified
 		if flagName == "" {
 			flagName = strings.ToLower(field.Name)
+		}
+
+		// env tag names the variable. EnvPrefix is prepended at lookup.
+		if envName != "" {
+			envTags[flagName] = envName
 		}
 
 		// Skip if flag already defined (preserves manual flag definitions)
@@ -250,7 +269,8 @@ func registerTagFlags(c interface{}) {
 		// Only register flags for fields with explicit tags
 		hasTag := field.Tag.Get("flag") != "" ||
 			field.Tag.Get("default") != "" ||
-			field.Tag.Get("desc") != ""
+			field.Tag.Get("desc") != "" ||
+			envName != ""
 		if !hasTag {
 			continue
 		}

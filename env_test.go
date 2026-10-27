@@ -126,6 +126,41 @@ func TestEnvLeavesFlagWhenUnset(t *testing.T) {
 	}
 }
 
+// TestEnvTag checks an env tag.
+//   - The tag value is the variable name, as written.
+//   - EnvPrefix is still prepended.
+//   - An env tag alone registers the flag.
+func TestEnvTag(t *testing.T) {
+	setEnvPrefix(t, "MYAPP_")
+	// cfg: env name differs from the flag name, plus an env-only field.
+	var cfg struct {
+		TitleDelimiter string `flag:"title-delimiter" env:"TitleSep" default:"_"`
+		OnlyEnv        string `env:"ONLY_ENV"`
+	}
+	registerTagFlags(&cfg)
+	if flag.Lookup("onlyenv") == nil {
+		t.Fatal("env tag alone did not register onlyenv")
+	}
+	restoreFlag(t, "title-delimiter")
+	restoreFlag(t, "onlyenv")
+	// Other spellings are set to different values so only the tag name matches.
+	mutateEnv(t, map[string]string{
+		"MYAPP_TitleSep":        "colon",
+		"MYAPP_TITLESEP":        "normalized-tag",
+		"MYAPP_TITLE_DELIMITER": "from-flag-name",
+		"MYAPP_ONLY_ENV":        "yes",
+		"MYAPP_ONLYENV":         "from-flag-name",
+	}, nil)
+	applyEnvOverride(flag.Lookup("title-delimiter"))
+	applyEnvOverride(flag.Lookup("onlyenv"))
+	if got := flag.Lookup("title-delimiter").Value.String(); got != "colon" {
+		t.Fatalf("title-delimiter = %q, want colon", got)
+	}
+	if got := flag.Lookup("onlyenv").Value.String(); got != "yes" {
+		t.Fatalf("onlyenv = %q, want yes", got)
+	}
+}
+
 func setEnvPrefix(t *testing.T, prefix string) {
 	t.Helper()
 	prev := EnvPrefix
