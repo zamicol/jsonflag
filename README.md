@@ -147,7 +147,7 @@ which makes dashed and dotted flag names settable in a shell. For example,
 `log-level` or `log.level` is read from `LOG_LEVEL`. `EnvPrefix`, when set, is
 prepended unchanged (`MYAPP_` + `log-level` is `MYAPP_LOG_LEVEL`).
 
-**Go JSON naming** For JSON names, this package uses Go’s json package for
+**Go JSON naming** For JSON names, this package uses the json5 package for
 decoding. The JSON decoder only has access to exported fields of structs and
 follows its own precedence for JSON decoding:
  1. Tags
