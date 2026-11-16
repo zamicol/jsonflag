@@ -31,7 +31,7 @@
 //     An `env` tag names the variable as written. EnvPrefix is still
 //     prepended: tag "TITLE_DELIMITER" and prefix "MYAPP_" read
 //     MYAPP_TITLE_DELIMITER. An `env` tag alone also registers the flag.
-//   - For JSON names, this package uses Go's json package for decoding. The JSON
+//   - For JSON names, this package uses the json5 package for decoding. The JSON
 //     decoder only accesses exported struct fields and follows this precedence:
 //     1. Tags
 //     2. Exact case
@@ -90,7 +90,6 @@
 package jsonflag
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -100,7 +99,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DisposaBoy/JsonConfigReader"
+	"github.com/zamicol/json5"
 )
 
 // Path defines the default config path and is relative to pwd.
@@ -213,8 +212,7 @@ func parseJSON(configPath string, c interface{}) {
 	}
 	defer file.Close()
 
-	r := JsonConfigReader.New(file)
-	decoder := json.NewDecoder(r)
+	decoder := json5.NewDecoder(file)
 	err = decoder.Decode(c)
 	if err != nil {
 		err = fmt.Errorf("%w; jsonflag: unable to decode config", err)
