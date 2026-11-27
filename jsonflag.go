@@ -55,6 +55,7 @@
 //     ```
 //  3. Add config values to a config.json file (defaults to the current working directory).
 //     Use --config=your_config.json to specify a different path.
+//     Use --write-config to write a default config to that path and exit.
 //  4. Call jsonflag.Parse(&config) to populate the config struct.
 //
 // # Config Path
@@ -114,13 +115,25 @@ var Path string
 // precluded.
 var EnvPrefix = ""
 
+// writeConfig is the --write-config flag.
+//   - Default is false.
+//   - Parse reads it before opening a config file.
+var writeConfig bool
+
+// osExit terminates the process.
+//   - Tests replace it so --write-config can run under `go test`.
+var osExit = os.Exit
+
 func init() {
 	// Set default config path to `config.json5`.  Overridable via cli `--config`.
 	flag.StringVar(&Path, "config", "config.json5", "Path to json config file.")
+	// --write-config writes defaults to the config path and exits.
+	flag.BoolVar(&writeConfig, "write-config", false, "Write a default JSON5 config and exit.")
 }
 
 // Parse reads the config file and parses CLI flags into c with a single flag.Parse() call.
 //  1. Parsing --config from command line (if present).
+//     --write-config writes a default config to that path and exits.
 //  2. Registering any missing flags from struct tags.
 //  3. Loading and decoding JSON config.
 //  4. Applying environment variables.
@@ -129,28 +142,49 @@ func Parse(c interface{}) {
 	// Manually extract --config or -config from os.Args instead of calling
 	// flag.Parse twice. By avoiding calling it twice, flag.Parse()'s `--help` works as
 	// expected.  Without this, `--help` will not work
+	// --write-config is read here too so a missing config file is not opened.
+	writeConfig = false
+	gotConfig := false
 	for i := 1; i < len(os.Args); i++ { // Start at 1 to skip program name.
 		arg := os.Args[i]
-		if arg == "--config" || arg == "-config" {
+		if !gotConfig && (arg == "--config" || arg == "-config") {
 			if i+1 < len(os.Args) && !strings.HasPrefix(os.Args[i+1], "-") {
 				Path = os.Args[i+1]
-				break
+				gotConfig = true
 			}
-		} else if strings.HasPrefix(arg, "--config=") {
+		} else if !gotConfig && strings.HasPrefix(arg, "--config=") {
 			Path = strings.TrimPrefix(arg, "--config=")
-			break
-		} else if strings.HasPrefix(arg, "-config=") {
+			gotConfig = true
+		} else if !gotConfig && strings.HasPrefix(arg, "-config=") {
 			Path = strings.TrimPrefix(arg, "-config=")
-			break
+			gotConfig = true
+		} else if isWriteConfigArg(arg) {
+			writeConfig = true
 		}
 	}
 
 	// flag.*Var writes its default into the field. Register first so JSON, env,
 	// and CLI overwrite that default.
-	registerTagFlags(c)             // Register struct tags
+	registerTagFlags(c) // Register struct tags
+	if writeConfig {
+		// Write before parseJSON so a missing config file is not an error.
+		if err := WriteDefault(Path, c); err != nil {
+			panic(err) // Fail fast matching flag.Parse() error reporting.
+		}
+		osExit(0)
+		return // osExit is stubbed in tests and returns.
+	}
 	parseJSON(Path, c)              // Parse JSON config.
 	flag.VisitAll(applyEnvOverride) // Apply environment variables to all defined flags
 	flag.Parse()                    // Finally parse CLI flags, override everything else
+}
+
+// isWriteConfigArg reports whether arg requests a default config.
+//   - `--write-config` and `-write-config`
+//   - `--write-config=true` and `-write-config=true`
+func isWriteConfigArg(arg string) bool {
+	return arg == "--write-config" || arg == "-write-config" ||
+		arg == "--write-config=true" || arg == "-write-config=true"
 }
 
 // envTags maps a flag name to its env tag value.
@@ -273,80 +307,93 @@ func registerTagFlags(c interface{}) {
 		// Register flags based on field type
 		switch field.Type.Kind() {
 		case reflect.String:
-			flag.StringVar(fv.Addr().Interface().(*string), flagName, defaultVal, desc)
+			flag.StringVar(fv.Addr().Interface().(*string), flagName, mustTagDefault(field.Type, flagName, defaultVal).(string), desc)
 		case reflect.Int:
-			var def int
-			if defaultVal != "" {
-				var err error
-				def, err = strconv.Atoi(defaultVal)
-				if err != nil {
-					panic(fmt.Errorf("jsonflag: invalid default int value for %s: %v", flagName, err))
-				}
-			}
-			flag.IntVar(fv.Addr().Interface().(*int), flagName, def, desc)
+			flag.IntVar(fv.Addr().Interface().(*int), flagName, mustTagDefault(field.Type, flagName, defaultVal).(int), desc)
 		case reflect.Int64:
+			def := mustTagDefault(field.Type, flagName, defaultVal)
 			if field.Type == reflect.TypeOf(time.Duration(0)) {
-				var def time.Duration
-				if defaultVal != "" {
-					var err error
-					def, err = time.ParseDuration(defaultVal)
-					if err != nil {
-						panic(fmt.Errorf("jsonflag: invalid default duration value for %s: %v", flagName, err))
-					}
-				}
-				flag.DurationVar(fv.Addr().Interface().(*time.Duration), flagName, def, desc)
+				flag.DurationVar(fv.Addr().Interface().(*time.Duration), flagName, def.(time.Duration), desc)
 			} else {
-				var def int64
-				if defaultVal != "" {
-					var err error
-					def, err = strconv.ParseInt(defaultVal, 10, 64)
-					if err != nil {
-						panic(fmt.Errorf("jsonflag: invalid default int64 value for %s: %v", flagName, err))
-					}
-				}
-				flag.Int64Var(fv.Addr().Interface().(*int64), flagName, def, desc)
+				flag.Int64Var(fv.Addr().Interface().(*int64), flagName, def.(int64), desc)
 			}
 		case reflect.Uint:
-			var def uint
-			if defaultVal != "" {
-				var err error
-				def64, err := strconv.ParseUint(defaultVal, 10, 32)
-				if err != nil {
-					panic(fmt.Errorf("jsonflag: invalid default uint value for %s: %v", flagName, err))
-				}
-				def = uint(def64)
-			}
-			flag.UintVar(fv.Addr().Interface().(*uint), flagName, def, desc)
+			flag.UintVar(fv.Addr().Interface().(*uint), flagName, mustTagDefault(field.Type, flagName, defaultVal).(uint), desc)
 		case reflect.Uint64:
-			var def uint64
-			if defaultVal != "" {
-				var err error
-				def, err = strconv.ParseUint(defaultVal, 10, 64)
-				if err != nil {
-					panic(fmt.Errorf("jsonflag: invalid default uint64 value for %s: %v", flagName, err))
-				}
-			}
-			flag.Uint64Var(fv.Addr().Interface().(*uint64), flagName, def, desc)
+			flag.Uint64Var(fv.Addr().Interface().(*uint64), flagName, mustTagDefault(field.Type, flagName, defaultVal).(uint64), desc)
 		case reflect.Float64:
-			var def float64
-			if defaultVal != "" {
-				var err error
-				def, err = strconv.ParseFloat(defaultVal, 64)
-				if err != nil {
-					panic(fmt.Errorf("jsonflag: invalid default float64 value for %s: %v", flagName, err))
-				}
-			}
-			flag.Float64Var(fv.Addr().Interface().(*float64), flagName, def, desc)
+			flag.Float64Var(fv.Addr().Interface().(*float64), flagName, mustTagDefault(field.Type, flagName, defaultVal).(float64), desc)
 		case reflect.Bool:
-			var def bool
-			if defaultVal != "" {
-				var err error
-				def, err = strconv.ParseBool(defaultVal)
-				if err != nil {
-					panic(fmt.Errorf("jsonflag: invalid default bool value for %s: %v", flagName, err))
-				}
-			}
-			flag.BoolVar(fv.Addr().Interface().(*bool), flagName, def, desc)
+			flag.BoolVar(fv.Addr().Interface().(*bool), flagName, mustTagDefault(field.Type, flagName, defaultVal).(bool), desc)
 		}
+	}
+}
+
+// mustTagDefault parses a `default` tag for registerTagFlags.
+//   - An invalid tag panics, matching flag.Parse's fail-fast design.
+func mustTagDefault(typ reflect.Type, name, defaultVal string) interface{} {
+	v, err := parseTagDefault(typ, name, defaultVal)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+// parseTagDefault parses a `default` tag into a value of typ.
+//   - An empty tag yields the zero value.
+//   - Types match registerTagFlags: string, int, int64, time.Duration, uint, uint64, float64, and bool.
+//   - name is included in the error.
+func parseTagDefault(typ reflect.Type, name, defaultVal string) (interface{}, error) {
+	if defaultVal == "" {
+		return reflect.Zero(typ).Interface(), nil
+	}
+	switch typ.Kind() {
+	case reflect.String:
+		return defaultVal, nil
+	case reflect.Int:
+		v, err := strconv.Atoi(defaultVal)
+		if err != nil {
+			return nil, fmt.Errorf("jsonflag: invalid default int value for %s: %v", name, err)
+		}
+		return v, nil
+	case reflect.Int64:
+		if typ == reflect.TypeOf(time.Duration(0)) {
+			v, err := time.ParseDuration(defaultVal)
+			if err != nil {
+				return nil, fmt.Errorf("jsonflag: invalid default duration value for %s: %v", name, err)
+			}
+			return v, nil
+		}
+		v, err := strconv.ParseInt(defaultVal, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("jsonflag: invalid default int64 value for %s: %v", name, err)
+		}
+		return v, nil
+	case reflect.Uint:
+		v, err := strconv.ParseUint(defaultVal, 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("jsonflag: invalid default uint value for %s: %v", name, err)
+		}
+		return uint(v), nil
+	case reflect.Uint64:
+		v, err := strconv.ParseUint(defaultVal, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("jsonflag: invalid default uint64 value for %s: %v", name, err)
+		}
+		return v, nil
+	case reflect.Float64:
+		v, err := strconv.ParseFloat(defaultVal, 64)
+		if err != nil {
+			return nil, fmt.Errorf("jsonflag: invalid default float64 value for %s: %v", name, err)
+		}
+		return v, nil
+	case reflect.Bool:
+		v, err := strconv.ParseBool(defaultVal)
+		if err != nil {
+			return nil, fmt.Errorf("jsonflag: invalid default bool value for %s: %v", name, err)
+		}
+		return v, nil
+	default:
+		return nil, fmt.Errorf("jsonflag: invalid default value for %s: unsupported type %s", name, typ)
 	}
 }
