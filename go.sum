@@ -2,8 +2,8 @@ github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
 github.com/robertkrimen/otto v0.4.0 h1:/c0GRrK1XDPcgIasAsnlpBT5DelIeB9U/Z/JCQsgr7E=
 github.com/robertkrimen/otto v0.4.0/go.mod h1:uW9yN1CYflmUQYvAMS0m+ZiNo3dMzRUDQJX0jWbzgxw=
-github.com/zamicol/json5 v0.0.0-20261111232037-9210ea9064c9 h1:HvtIe5/XT9Gi1OIufPo/yHokvtWAduXhSKbu/m1hwbc=
-github.com/zamicol/json5 v0.0.0-20261111232037-9210ea9064c9/go.mod h1:AmDujBspPPzOyLc1p8BjMEA6v9/hs15qYPzY/nMk1NI=
+github.com/zamicol/json5 v0.0.0-20261126175643-d2ce649e6e08 h1:wzSgxh+4DehWeaKqUIZUHA/fbA+w81gNA9ZRbGzqX+w=
+github.com/zamicol/json5 v0.0.0-20261126175643-d2ce649e6e08/go.mod h1:AmDujBspPPzOyLc1p8BjMEA6v9/hs15qYPzY/nMk1NI=
 golang.org/x/text v0.22.0 h1:bofq7m3/HAFvbF51jz3Q9wLg3jkvSPuiZu/pD1XwgtM=
 golang.org/x/text v0.22.0/go.mod h1:YRoo4H8PVmsu+E3Ou7cqLVH8oXWIHVoX0jqUWALQhfY=
 gopkg.in/sourcemap.v1 v1.0.5 h1:inv58fC9f9J3TK2Y2R1NPntXEn3/wjWHkonhIUODNTI=
