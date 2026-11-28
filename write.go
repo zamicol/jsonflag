@@ -89,7 +89,7 @@ func marshalDefaultConfig(v reflect.Value) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		encoded, err := formatJSONValue(val)
+		encoded, err := json.Marshal(val)
 		if err != nil {
 			return nil, fmt.Errorf("jsonflag: marshal %s: %w", field.Name, err)
 		}
@@ -108,7 +108,7 @@ func marshalDefaultConfig(v reflect.Value) ([]byte, error) {
 		b.WriteString(configIndent)
 		b.Write(key)
 		b.WriteString(": ")
-		b.WriteString(encoded)
+		b.Write(encoded)
 		b.WriteString(",\n")
 	}
 	b.WriteString("}\n")
@@ -138,31 +138,4 @@ func fieldJSONValue(field reflect.StructField, fv reflect.Value) (interface{}, e
 		return parseTagDefault(field.Type, field.Name, tag)
 	}
 	return fv.Interface(), nil
-}
-
-// formatJSONValue marshals v with encoding/json.
-//   - A value that already contains newlines is indented to match the object.
-func formatJSONValue(v interface{}) (string, error) {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return "", err
-	}
-	return indentMultiline(b), nil
-}
-
-// indentMultiline indents lines after the first.
-//   - A multi-line value stays inside the surrounding object.
-func indentMultiline(b []byte) string {
-	if !bytes.Contains(b, []byte("\n")) {
-		return string(b)
-	}
-	lines := bytes.Split(b, []byte("\n"))
-	var buf bytes.Buffer
-	buf.Write(lines[0])
-	for _, line := range lines[1:] {
-		buf.WriteByte('\n')
-		buf.WriteString(configIndent)
-		buf.Write(line)
-	}
-	return buf.String()
 }
