@@ -26,6 +26,7 @@ CLI flags.
 
 jsonflag also supports:
 - **Default values** in tags
+- **Writing a default config** with `WriteDefault` or `--write-config`
 
 ## Installation
 
@@ -65,6 +66,27 @@ func main(){
 ```
 
 (Related reminder: `os.UserConfigDir()` may be idiomatic for some applications.)
+
+## Write a default config
+
+`WriteDefault` writes an indented JSON5 config for a struct:
+
+```go
+err := jsonflag.WriteDefault("config.json5", &config)
+```
+
+Each exported field is one key. The key is the `json` name, or the Go field
+name when that tag is empty. A `default` tag supplies the value; otherwise the
+field's current value is written, including values set with `flag` or a struct
+literal. `time.Duration` is written as integer nanoseconds. A `desc` tag is
+written as a `//` comment above that field. If the file already
+exists, `WriteDefault` returns an error that wraps `os.ErrExist`.
+
+`--write-config` writes that file to the config path and exits:
+
+```bash
+go run main.go --write-config --config=config.json5
+```
 
 ## Quick Example
 Example `config.json5` file:
